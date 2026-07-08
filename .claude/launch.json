@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gran-patron",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\cuent\\OneDrive\\Escritorio\\taqueria\\.claude\\serve.ps1"],
+      "port": 8642
+    }
+  ]
+}
