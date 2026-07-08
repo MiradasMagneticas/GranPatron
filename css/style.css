@@ -1358,3 +1358,37 @@ html:not(.js-anim) [data-animation] * {
   visibility: visible !important;
 }
 
+/* ── LIBERACIÓN GLOBAL DE COMPONENTES (FALLBACK ESTÁTICO) ────────────
+   El JS añade body.animations-disabled cuando GSAP/ScrollTrigger no están
+   disponibles o cuando el arranque falla. En ese caso mostramos TODA la
+   página al 100%, estática, sin depender de ninguna animación: hero, textos,
+   feed de Instagram, decoraciones y footer se ven de inmediato. */
+body.animations-disabled [data-animation],
+body.animations-disabled [data-animation] *,
+body.animations-disabled .hero-glow,
+body.animations-disabled .hero-kicker .hero-word,
+body.animations-disabled .hero-title .hero-word,
+body.animations-disabled .hero-kicker .hero-ornament,
+body.animations-disabled .hero-script,
+body.animations-disabled .hero-ctas,
+body.animations-disabled .hero-scroll-hint,
+body.animations-disabled .ig-card,
+body.animations-disabled .ig-grid,
+body.animations-disabled .ig-header,
+body.animations-disabled .ig-highlights,
+body.animations-disabled .ig-open,
+body.animations-disabled .salsa-card,
+body.animations-disabled .nosotros-card,
+body.animations-disabled .meme-frame,
+body.animations-disabled .meme-frame img,
+body.animations-disabled .site-footer,
+body.animations-disabled .site-footer * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+

@@ -46,6 +46,19 @@ if (HAS_ST) {
   ScrollTrigger.clearScrollMemory("manual");
 }
 
+/* LIBERACIÓN GLOBAL DE COMPONENTES:
+   Si no hay motor de animaciones (GSAP/ScrollTrigger ausentes, CDN caído,
+   navegador viejo), marcamos el <body> con .animations-disabled para que el
+   CSS muestre TODO el contenido (textos, footer, feed de Instagram,
+   decoraciones) al 100% de inmediato y estático. Nada queda amarrado a una
+   animación que no va a ejecutarse. */
+if (!HAS_GSAP || !HAS_ST) {
+  safe("fallback sin animaciones", () => {
+    if (document.body) document.body.classList.add("animations-disabled");
+    else document.addEventListener("DOMContentLoaded", () => document.body.classList.add("animations-disabled"));
+  });
+}
+
 /* Fuerza el tope tanto en el scroll nativo como en el estado interno de
    Lenis. Ambos deben coincidir o Lenis vuelve a saltar a su posición vieja. */
 function forceScrollTop() {
@@ -549,12 +562,18 @@ function setupEntrances() {
     const targets = children.length ? children : [el];
     // Tween desacoplado del trigger: ScrollTrigger.refresh() (p. ej. al cambiar
     // de tab del menú) no puede revertirlo a mitad de la animación.
+    // immediateRender:false es CLAVE para la compatibilidad: sin esto GSAP
+    // aplica opacity:0 al instante y, si el ScrollTrigger no dispara en el
+    // navegador, el contenido queda oculto para siempre. Con immediateRender
+    // en false el estado "from" solo se aplica cuando el tween realmente se
+    // reproduce; si nunca se dispara, el contenido permanece visible.
     const tween = gsap.from(targets, {
       ...cfg.from,
       duration: cfg.dur,
       ease: cfg.ease,
       stagger: 0.12,
       paused: true,
+      immediateRender: false,
       clearProps: el.dataset.animation === "rotate-in" ? "" : "filter,clipPath"
     });
     ScrollTrigger.create({
@@ -844,5 +863,7 @@ setTimeout(() => {
   if (!siteRevealed) {
     if (window.console && console.warn) console.warn("[GranPatrón] reveal forzado por watchdog");
     revealSite();
+    // Si llegamos aquí algo grave falló en el arranque: mostramos todo estático.
+    safe("fallback watchdog", () => document.body.classList.add("animations-disabled"));
   }
 }, 6000);
