@@ -278,9 +278,12 @@
     🛒 Tu pedido · <span id="cart-pill-count">0</span> · <span id="cart-pill-total">$0</span>
   </button>
 
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+  <!-- Librerías auto-hospedadas: sin CDN externo que pueda fallar
+       (redes corporativas, bloqueadores, certificados viejos). app.js
+       además detecta si faltan y usa fallbacks nativos. -->
+  <script src="js/vendor/lenis.min.js"></script>
+  <script src="js/vendor/gsap.min.js"></script>
+  <script src="js/vendor/ScrollTrigger.min.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

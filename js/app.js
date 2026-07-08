@@ -1,21 +1,50 @@
 /* ═══════════════════════════════════════════════
    GRAN PATRÓN TAQUERÍA — app.js
    Lenis + GSAP ScrollTrigger + canvas scrubbing + carrito WhatsApp
+
+   ARQUITECTURA A PRUEBA DE FALLOS:
+   - El menú y el carrito se renderizan PRIMERO y no dependen del canvas,
+     de GSAP ni de Lenis. Si algo falla, la carta se pinta sí o sí.
+   - Cada módulo se inicializa dentro de su propio try/catch (safe()):
+     un error en un módulo no tumba a los demás.
+   - Si GSAP/ScrollTrigger/Lenis no cargan (CDN caído, red corporativa,
+     navegador viejo), hay fallbacks nativos: scroll normal, contenido
+     visible sin animaciones y scrub del hero con el evento scroll.
+   - Los datos del menú van inline en este archivo (no hay fetch() ni
+     JSON externo que pueda fallar por rutas o mayúsculas/minúsculas).
    ═══════════════════════════════════════════════ */
 
 "use strict";
 
+/* ── DETECCIÓN DE LIBRERÍAS ─────────────────── */
+var HAS_GSAP = typeof gsap !== "undefined";
+var HAS_ST = HAS_GSAP && typeof ScrollTrigger !== "undefined";
+var HAS_LENIS = typeof Lenis !== "undefined";
+
+function safe(name, fn) {
+  try {
+    fn();
+  } catch (error) {
+    // Nunca detenemos el resto de la página por un módulo roto.
+    if (window.console && console.error) console.error("[GranPatrón] módulo «" + name + "» falló:", error);
+  }
+}
+
 /* La página siempre debe abrir en el inicio (no a mitad de página).
    Desactivamos la restauración de scroll del navegador y forzamos el tope. */
-if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-if (location.hash) history.replaceState(null, "", location.pathname + location.search);
-window.scrollTo(0, 0);
-window.addEventListener("beforeunload", () => window.scrollTo(0, 0));
+safe("scroll-restoration", () => {
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  window.scrollTo(0, 0);
+  window.addEventListener("beforeunload", () => window.scrollTo(0, 0));
+});
 
-gsap.registerPlugin(ScrollTrigger);
-// Evita que ScrollTrigger recuerde/restaure la posición previa (en desktop
-// esto hacía que la página abriera al final del hero, ya en el menú).
-ScrollTrigger.clearScrollMemory("manual");
+if (HAS_ST) {
+  gsap.registerPlugin(ScrollTrigger);
+  // Evita que ScrollTrigger recuerde/restaure la posición previa (en desktop
+  // esto hacía que la página abriera al final del hero, ya en el menú).
+  ScrollTrigger.clearScrollMemory("manual");
+}
 
 /* Fuerza el tope tanto en el scroll nativo como en el estado interno de
    Lenis. Ambos deben coincidir o Lenis vuelve a saltar a su posición vieja. */
@@ -176,21 +205,42 @@ const SALSAS = [
 
 const CHILE_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.2 3.2c.5-.9 1.6-1.4 2.6-1.1-.2.8-.8 1.5-1.6 1.8.9.5 1.5 1.4 1.6 2.5.1 1.5-.7 8.2-5.4 12.9-3 3-6.9 4-9.9 3.4-.8-.2-1-.7-.3-1.1 4.8-2.6 7.4-5 8.9-8.7.8-2 .9-4.4.5-6.3-.2-1.2.4-2.4 1.5-2.9.7-.3 1.5-.3 2.1-.5z"/></svg>`;
 
-/* ── LENIS + SCROLLTRIGGER ──────────────────── */
-const lenis = new Lenis({
-  duration: 1.2,
-  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-  smoothWheel: true
-});
-lenis.on("scroll", ScrollTrigger.update);
-gsap.ticker.add((time) => lenis.raf(time * 1000));
-gsap.ticker.lagSmoothing(0);
+/* ── LENIS + SCROLLTRIGGER (con fallback nativo) ── */
+/* Si Lenis no cargó, usamos un shim con la misma interfaz sobre el scroll
+   nativo del navegador: la página funciona igual, solo sin inercia suave. */
+const lenis = HAS_LENIS
+  ? new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true
+    })
+  : {
+      on() {},
+      raf() {},
+      scrollTo(target, opts) {
+        opts = opts || {};
+        let y = 0;
+        if (typeof target === "number") {
+          y = target;
+        } else {
+          const el = typeof target === "string" ? document.querySelector(target) : target;
+          if (el) y = el.getBoundingClientRect().top + window.pageYOffset + (opts.offset || 0);
+        }
+        window.scrollTo({ top: y, behavior: opts.immediate ? "auto" : "smooth" });
+      }
+    };
+
+if (HAS_LENIS && HAS_ST) {
+  lenis.on("scroll", ScrollTrigger.update);
+  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
 window.lenis = lenis;
 
 /* ── CANVAS DEL HERO ────────────────────────── */
 const canvas = document.getElementById("canvas");
 // desynchronized: reduce la latencia entre el dibujo y la pantalla (menos jank).
-const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+const ctx = canvas ? canvas.getContext("2d", { alpha: false, desynchronized: true }) : null;
 const frames = new Array(FRAME_COUNT).fill(null);
 let currentFrame = 0;         // último frame entero solicitado
 let lastDrawnFrame = -1;      // último frame REALMENTE pintado (debounce estricto)
@@ -213,6 +263,7 @@ const SLOGAN_IN_END = 0.66;
    canvas.width/height (aunque sea el mismo valor) limpia el buffer e invalida
    el caché de textura de la GPU, así que lo evitamos fuera de los resizes reales. */
 function resizeCanvas() {
+  if (!canvas || !ctx) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.round(canvas.clientWidth * dpr);
   const h = Math.round(canvas.clientHeight * dpr);
@@ -245,6 +296,7 @@ function sampleBgColor(img) {
 }
 
 function drawFrame(index) {
+  if (!ctx) return;
   const img = nearestLoaded(index);
   if (!img) return;
   if (Math.abs(index - lastSampledFrame) >= 20) {
@@ -316,6 +368,7 @@ function frameLoop() {
 const loader = document.getElementById("loader");
 const loaderBar = document.getElementById("loader-bar");
 const loaderPercent = document.getElementById("loader-percent");
+let siteRevealed = false;
 
 function loadFrame(i) {
   return new Promise((resolve) => {
@@ -335,8 +388,8 @@ async function preloadFrames() {
 
   const updateProgress = () => {
     const pct = Math.round((loaded / FRAME_COUNT) * 100);
-    loaderBar.style.width = pct + "%";
-    loaderPercent.textContent = pct + "%";
+    if (loaderBar) loaderBar.style.width = pct + "%";
+    if (loaderPercent) loaderPercent.textContent = pct + "%";
     // El primer frame ya está listo: pintamos el póster cuanto antes.
     if (loaded === 1) revealFirstFrame();
   };
@@ -364,12 +417,16 @@ function revealFirstFrame() {
 }
 
 function revealSite() {
+  if (siteRevealed) return;
+  siteRevealed = true;
   resizeCanvas();
   drawFrame(0);
   // Recalculamos posiciones ahora que el layout ya es estable y limpiamos
   // cualquier memoria de scroll para arrancar siempre en el hero.
-  ScrollTrigger.clearScrollMemory("manual");
-  ScrollTrigger.refresh();
+  if (HAS_ST) {
+    ScrollTrigger.clearScrollMemory("manual");
+    ScrollTrigger.refresh();
+  }
   // Aseguramos que al mostrar el sitio quede exactamente en el inicio.
   // Repetimos en varios ticks porque Lenis/ScrollTrigger pueden reintentar
   // restaurar su posición previa justo después del reveal.
@@ -378,12 +435,14 @@ function revealSite() {
     forceScrollTop();
     requestAnimationFrame(forceScrollTop);
   });
-  loader.classList.add("done");
+  if (loader) {
+    loader.classList.add("done");
+    setTimeout(() => {
+      if (loader.parentNode) loader.parentNode.removeChild(loader);
+      forceScrollTop();
+    }, 900);
+  }
   document.body.classList.add("loaded");
-  setTimeout(() => {
-    loader.remove();
-    forceScrollTop();
-  }, 900);
 }
 
 /* ── SCRUB DE FRAMES EN LA ZONA DEL HERO ────── */
@@ -392,53 +451,75 @@ const heroOverlay = document.getElementById("hero-overlay");
 const heroScrim = document.getElementById("hero-scrim");
 const heroSlogan = document.getElementById("hero-slogan");
 
-ScrollTrigger.create({
-  trigger: heroScroll,
-  start: "top top",
-  end: "bottom top",
-  scrub: true,
-  onUpdate: (self) => {
-    // Productor ligero: solo guarda estado y marca "dirty". El trabajo de
-    // dibujo se hace en el rAF loop (throttle natural a 60fps).
-    const p = self.progress;
-    heroProgress = p;
-    const accelerated = Math.min(p * FRAME_SPEED, 1);
-    const playable = FRAME_COUNT - START_FRAME;
-    scrollTarget = Math.min(START_FRAME + accelerated * playable, FRAME_COUNT - 1);
-    heroVisualsDirty = true;
-    scheduleFrameDraw();
+function onHeroProgress(p) {
+  // Productor ligero: solo guarda estado y marca "dirty". El trabajo de
+  // dibujo se hace en el rAF loop (throttle natural a 60fps).
+  heroProgress = p;
+  const accelerated = Math.min(p * FRAME_SPEED, 1);
+  const playable = FRAME_COUNT - START_FRAME;
+  scrollTarget = Math.min(START_FRAME + accelerated * playable, FRAME_COUNT - 1);
+  heroVisualsDirty = true;
+  scheduleFrameDraw();
+}
+
+function initHeroScrub() {
+  if (HAS_ST) {
+    ScrollTrigger.create({
+      trigger: heroScroll,
+      start: "top top",
+      end: "bottom top",
+      scrub: true,
+      onUpdate: (self) => onHeroProgress(self.progress)
+    });
+  } else {
+    // Fallback sin ScrollTrigger: el scroll nativo calcula el progreso.
+    const update = () => {
+      const total = heroScroll.offsetHeight || 1;
+      const p = Math.max(0, Math.min(1, (window.pageYOffset || 0) / total));
+      onHeroProgress(p);
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
   }
-});
+}
 
 /* ── HEADER SÓLIDO AL HACER SCROLL ──────────── */
-const header = document.getElementById("site-header");
-lenis.on("scroll", ({ scroll }) => {
-  header.classList.toggle("solid", scroll > 40);
-});
+/* Lenis desplaza la ventana nativa, así que un solo listener nativo
+   cubre ambos mundos (con y sin Lenis). */
+function initHeader() {
+  const header = document.getElementById("site-header");
+  const update = () => header.classList.toggle("solid", (window.pageYOffset || 0) > 40);
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+}
 
 /* ── NAV MÓVIL + SCROLL SUAVE A ANCLAS ──────── */
-const navToggle = document.getElementById("nav-toggle");
-const headerNav = document.getElementById("header-nav");
+function initNav() {
+  const navToggle = document.getElementById("nav-toggle");
+  const headerNav = document.getElementById("header-nav");
 
-navToggle.addEventListener("click", () => {
-  const open = headerNav.classList.toggle("open");
-  navToggle.setAttribute("aria-expanded", open);
-});
-
-document.querySelectorAll("[data-scroll]").forEach((link) => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
-    headerNav.classList.remove("open");
-    navToggle.setAttribute("aria-expanded", "false");
-    lenis.scrollTo(link.dataset.scroll, { offset: -20, duration: 1.6 });
+  navToggle.addEventListener("click", () => {
+    const open = headerNav.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", open);
   });
-});
 
-document.getElementById("back-to-top").addEventListener("click", () => {
-  lenis.scrollTo(0, { duration: 1.8 });
-});
+  document.querySelectorAll("[data-scroll]").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      headerNav.classList.remove("open");
+      navToggle.setAttribute("aria-expanded", "false");
+      lenis.scrollTo(link.dataset.scroll, { offset: -20, duration: 1.6 });
+    });
+  });
+
+  document.getElementById("back-to-top").addEventListener("click", () => {
+    lenis.scrollTo(0, { duration: 1.8 });
+  });
+}
 
 /* ── ANIMACIONES DE ENTRADA POR SECCIÓN ─────── */
+/* Sin GSAP no se registran: el contenido queda visible de una (gsap.from
+   es quien lo oculta, así que su ausencia = todo pintado normal). */
 const ENTRANCES = {
   "fade-up":    { from: { y: 50, opacity: 0 }, dur: 0.9, ease: "power3.out" },
   "scale-up":   { from: { y: 40, scale: 0.85, opacity: 0 }, dur: 1.0, ease: "power2.out" },
@@ -449,6 +530,7 @@ const ENTRANCES = {
 };
 
 function setupEntrances() {
+  if (!HAS_ST) return;
   document.querySelectorAll("[data-animation]").forEach((el) => {
     const cfg = ENTRANCES[el.dataset.animation];
     if (!cfg) return;
@@ -488,6 +570,7 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
   const taglineEl = document.getElementById(taglineId);
   const gridEl = document.getElementById(gridId);
   const noteEl = document.getElementById(noteId);
+  if (!tabsEl || !gridEl) return;
   let active = cats[0].id;
 
   function renderTabs() {
@@ -567,12 +650,12 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
     cat.items.forEach((item) => {
       gridEl.appendChild(cat.premium ? licorCard(cat, item) : foodCard(cat, item));
     });
-    if (animate) {
+    if (animate && HAS_GSAP) {
       gsap.fromTo([taglineEl, ...gridEl.children],
         { y: 40, opacity: 0 },
         { y: 0, opacity: 1, stagger: 0.05, duration: 0.6, ease: "power3.out", overwrite: true }
       );
-      ScrollTrigger.refresh();
+      if (HAS_ST) ScrollTrigger.refresh();
     }
   }
 
@@ -591,6 +674,10 @@ const cartList = document.getElementById("cart-list");
 const cartTotalEl = document.getElementById("cart-total");
 const cartCountBadge = document.getElementById("cart-count-badge");
 
+function cssEscape(value) {
+  return (window.CSS && CSS.escape) ? CSS.escape(value) : value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
 function addToCart(catId, item) {
   const id = itemId(catId, item.n);
   const entry = cart.get(id) || { name: item.n, price: item.p, qty: 0, img: item.img };
@@ -598,7 +685,9 @@ function addToCart(catId, item) {
   cart.set(id, entry);
   updateCartUI(id);
   // El botón flotante rebota al agregar
-  gsap.fromTo(cartPill, { scale: 1 }, { scale: 1.12, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", overwrite: true, transformOrigin: "50% 50%" });
+  if (HAS_GSAP) {
+    gsap.fromTo(cartPill, { scale: 1 }, { scale: 1.12, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", overwrite: true, transformOrigin: "50% 50%" });
+  }
 }
 
 function changeQty(id, delta) {
@@ -637,15 +726,15 @@ function updateCartUI(changedId) {
         <button type="button" aria-label="Agregar uno">+</button>
       </span>
       <span class="cart-item-sub">${fmt(entry.qty * entry.price)}</span>`;
-    const [minus, plus] = li.querySelectorAll("button");
-    minus.addEventListener("click", () => changeQty(id, -1));
-    plus.addEventListener("click", () => changeQty(id, 1));
+    const btns = li.querySelectorAll("button");
+    btns[0].addEventListener("click", () => changeQty(id, -1));
+    btns[1].addEventListener("click", () => changeQty(id, 1));
     cartList.appendChild(li);
   });
   cartTotalEl.textContent = fmt(total);
   // Resalta la fila tocada y pulsa el total
-  if (changedId) {
-    const row = cartList.querySelector(`[data-id="${CSS.escape(changedId)}"]`);
+  if (changedId && HAS_GSAP) {
+    const row = cartList.querySelector(`[data-id="${cssEscape(changedId)}"]`);
     if (row) {
       gsap.fromTo(row, { backgroundColor: "rgba(201,162,39,0.16)", x: -6 }, { backgroundColor: "rgba(201,162,39,0)", x: 0, duration: 0.8, ease: "power2.out" });
     }
@@ -653,24 +742,26 @@ function updateCartUI(changedId) {
   }
 }
 
-cartPill.addEventListener("click", () => {
-  lenis.scrollTo("#pedido", { offset: -20, duration: 1.6 });
-});
+function initCart() {
+  cartPill.addEventListener("click", () => {
+    lenis.scrollTo("#pedido", { offset: -20, duration: 1.6 });
+  });
 
-document.getElementById("cart-send").addEventListener("click", () => {
-  const { total } = cartTotals();
-  if (total === 0) return;
-  const itemsFormateados = [...cart.values()]
-    .map((e) => `• ${e.qty}x ${e.name} — ${fmt(e.qty * e.price)}`)
-    .join("\n");
-  const mensaje = `¡Hola Gran Patrón! 🌮 Quiero pedir a domicilio:\n${itemsFormateados}\n\nTotal: $${total.toLocaleString("es-CO")}\n\n📍 Mi dirección: `;
-  const url = `https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(mensaje)}`;
-  window.open(url, "_blank");
-});
+  document.getElementById("cart-send").addEventListener("click", () => {
+    const { total } = cartTotals();
+    if (total === 0) return;
+    const itemsFormateados = [];
+    cart.forEach((e) => itemsFormateados.push(`• ${e.qty}x ${e.name} — ${fmt(e.qty * e.price)}`));
+    const mensaje = `¡Hola Gran Patrón! 🌮 Quiero pedir a domicilio:\n${itemsFormateados.join("\n")}\n\nTotal: $${total.toLocaleString("es-CO")}\n\n📍 Mi dirección: `;
+    const url = `https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, "_blank");
+  });
+}
 
 /* ── SALSAS ─────────────────────────────────── */
 function renderSalsas() {
   const grid = document.getElementById("salsas-grid");
+  if (!grid) return;
   SALSAS.forEach((s) => {
     const card = document.createElement("div");
     card.className = `salsa-card h${s.h}`;
@@ -691,7 +782,7 @@ function renderSalsas() {
 /* ── REEL DE INSTAGRAM (play solo en viewport) ─ */
 function setupReel() {
   const video = document.getElementById("ig-reel-video");
-  if (!video) return;
+  if (!video || typeof IntersectionObserver === "undefined") return;
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) video.play().catch(() => {});
@@ -702,12 +793,27 @@ function setupReel() {
 }
 
 /* ── INIT ───────────────────────────────────── */
-window.addEventListener("resize", resizeCanvas);
+/* ORDEN CRÍTICO: el menú, las salsas y el carrito van PRIMERO y aislados.
+   Aunque el canvas, GSAP o Lenis fallen, la carta se pinta siempre. */
+safe("menú · la cocina", () => initMenuBlock(MENU_COCINA, "tabs-cocina", "tagline-cocina", "grid-cocina", "note-cocina"));
+safe("menú · la barra", () => initMenuBlock(MENU_BARRA, "tabs-barra", "tagline-barra", "grid-barra", "note-barra"));
+safe("salsas", renderSalsas);
+safe("carrito", initCart);
+safe("navegación", initNav);
+safe("header", initHeader);
+safe("reel instagram", setupReel);
+safe("animaciones de entrada", setupEntrances);
+safe("hero scrub", initHeroScrub);
+safe("canvas resize", () => window.addEventListener("resize", resizeCanvas));
+safe("precarga de frames", preloadFrames);
+if (HAS_ST) safe("scrolltrigger refresh", () => ScrollTrigger.refresh());
 
-initMenuBlock(MENU_COCINA, "tabs-cocina", "tagline-cocina", "grid-cocina", "note-cocina");
-initMenuBlock(MENU_BARRA, "tabs-barra", "tagline-barra", "grid-barra", "note-barra");
-renderSalsas();
-setupEntrances();
-setupReel();
-preloadFrames();
-ScrollTrigger.refresh();
+/* Red de seguridad: si algo impidió llegar a revealSite() (frames rotos,
+   canvas sin contexto, etc.), el loader se quita solo a los 6 segundos
+   para que la página NUNCA quede en negro. */
+setTimeout(() => {
+  if (!siteRevealed) {
+    if (window.console && console.warn) console.warn("[GranPatrón] reveal forzado por watchdog");
+    revealSite();
+  }
+}, 6000);
