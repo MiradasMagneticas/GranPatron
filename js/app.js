@@ -13,6 +13,21 @@ window.scrollTo(0, 0);
 window.addEventListener("beforeunload", () => window.scrollTo(0, 0));
 
 gsap.registerPlugin(ScrollTrigger);
+// Evita que ScrollTrigger recuerde/restaure la posición previa (en desktop
+// esto hacía que la página abriera al final del hero, ya en el menú).
+ScrollTrigger.clearScrollMemory("manual");
+
+/* Fuerza el tope tanto en el scroll nativo como en el estado interno de
+   Lenis. Ambos deben coincidir o Lenis vuelve a saltar a su posición vieja. */
+function forceScrollTop() {
+  window.scrollTo(0, 0);
+  if (window.lenis) window.lenis.scrollTo(0, { immediate: true, force: true });
+}
+// El navegador puede restaurar el scroll justo después de 'load'; lo pisamos.
+window.addEventListener("load", () => {
+  forceScrollTop();
+  requestAnimationFrame(forceScrollTop);
+});
 
 /* ── CONFIG ─────────────────────────────────── */
 const FRAME_COUNT = 59;
@@ -322,12 +337,24 @@ function revealFirstFrame() {
 function revealSite() {
   resizeCanvas();
   drawFrame(0);
+  // Recalculamos posiciones ahora que el layout ya es estable y limpiamos
+  // cualquier memoria de scroll para arrancar siempre en el hero.
+  ScrollTrigger.clearScrollMemory("manual");
+  ScrollTrigger.refresh();
   // Aseguramos que al mostrar el sitio quede exactamente en el inicio.
-  window.scrollTo(0, 0);
-  if (window.lenis) window.lenis.scrollTo(0, { immediate: true, force: true });
+  // Repetimos en varios ticks porque Lenis/ScrollTrigger pueden reintentar
+  // restaurar su posición previa justo después del reveal.
+  forceScrollTop();
+  requestAnimationFrame(() => {
+    forceScrollTop();
+    requestAnimationFrame(forceScrollTop);
+  });
   loader.classList.add("done");
   document.body.classList.add("loaded");
-  setTimeout(() => loader.remove(), 900);
+  setTimeout(() => {
+    loader.remove();
+    forceScrollTop();
+  }, 900);
 }
 
 /* ── SCRUB DE FRAMES EN LA ZONA DEL HERO ────── */
