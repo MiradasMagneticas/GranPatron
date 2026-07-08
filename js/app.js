@@ -8,11 +8,12 @@
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 140;
+const FRAME_COUNT = 113;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(4, "0")}.webp`;
 const PRELOAD_FIRST = 10;   // frames antes de ocultar el loader
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
-const FRAME_SPEED = 1.55;   // el taco termina de abrirse ~64% del scroll del hero
+const FRAME_SPEED = 1.8;    // el taco termina de abrirse antes en el scroll del hero
+const START_FRAME = 18;     // salta frames iniciales para acelerar el arranque
 const WA_NUMERO = "573143564723";
 const IMG = (slug) => `assets/img/menu/${slug}.webp`;
 
@@ -132,7 +133,7 @@ const MENU_BARRA = [
       { n: "Aguardiente Amarillo", p: 130000, img: IMG("aguardiente-amarillo"), tag: "Botella", type: "Aguardiente" },
       { n: "Tequila Jimador Blanco", p: 180000, img: IMG("jimador-blanco"), tag: "Botella", type: "Tequila" },
       { n: "Tequila Jimador Reposado", p: 190000, img: IMG("jimador-reposado"), tag: "Botella", type: "Tequila" },
-      { n: "Tequila Patrón Reposado", p: 450000, img: null, tag: "Botella", type: "Tequila" },
+      { n: "Tequila Patrón Reposado", p: 450000, img: IMG("patron-reposado"), tag: "Botella", type: "Tequila" },
       { n: "Don Julio 70 Cristalino", p: 600000, img: IMG("don-julio-70"), tag: "Botella", type: "Tequila" },
       { n: "Whiskey Buchanans 12 Años", p: 250000, img: IMG("buchanans-12"), tag: "Botella", type: "Whisky" },
       { n: "Whiskey Buchanans Two S", p: 360000, img: IMG("buchanans-two-souls"), tag: "Botella", type: "Whisky" }
@@ -141,13 +142,13 @@ const MENU_BARRA = [
 ];
 
 const SALSAS = [
-  { n: "Taquera verde", f: "La de siempre: fresca y confiable", h: 1, label: "Suave" },
-  { n: "Guayaba", f: "Dulce, con carácter escondido", h: 2, label: "Media" },
-  { n: "Maracuyá", f: "Tropical y engañosamente amable", h: 2, label: "Media" },
-  { n: "Lulo", f: "Ácida y brava, bien colombiana", h: 3, label: "Fuerte" },
-  { n: "Salsa Gran Patrón", f: "La receta secreta de la casa", h: 3, label: "Fuerte" },
-  { n: "Molcajeteada", f: "Molida en molcajete, con humo", h: 4, label: "¡Extrema!" },
-  { n: "Salsa Fantasma", f: "Solo para valientes de verdad", h: 4, label: "¡Extrema!" }
+  { n: "Taquera verde", f: "La de siempre: fresca y confiable.", h: 1, label: "Suave" },
+  { n: "Guayaba", f: "Dulce, con carácter escondido.", h: 2, label: "Media" },
+  { n: "Maracuyá", f: "Tropical y engañosamente amable.", h: 2, label: "Media" },
+  { n: "Lulo", f: "Ácida y brava, bien colombiana.", h: 3, label: "Fuerte" },
+  { n: "Salsa Gran Patrón", f: "La receta secreta de la casa.", h: 3, label: "Fuerte" },
+  { n: "Molcajeteada", f: "Molida en molcajete, con humo.", h: 4, label: "¡Extrema!" },
+  { n: "Salsa Fantasma", f: "Solo para valientes de verdad.", h: 4, label: "¡Extrema!" }
 ];
 
 const CHILE_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.2 3.2c.5-.9 1.6-1.4 2.6-1.1-.2.8-.8 1.5-1.6 1.8.9.5 1.5 1.4 1.6 2.5.1 1.5-.7 8.2-5.4 12.9-3 3-6.9 4-9.9 3.4-.8-.2-1-.7-.3-1.1 4.8-2.6 7.4-5 8.9-8.7.8-2 .9-4.4.5-6.3-.2-1.2.4-2.4 1.5-2.9.7-.3 1.5-.3 2.1-.5z"/></svg>`;
@@ -263,6 +264,7 @@ function revealSite() {
 const heroScroll = document.getElementById("hero-scroll");
 const heroOverlay = document.getElementById("hero-overlay");
 const heroScrim = document.getElementById("hero-scrim");
+const heroSlogan = document.getElementById("hero-slogan");
 
 ScrollTrigger.create({
   trigger: heroScroll,
@@ -272,7 +274,8 @@ ScrollTrigger.create({
   onUpdate: (self) => {
     const p = self.progress;
     const accelerated = Math.min(p * FRAME_SPEED, 1);
-    const index = Math.min(Math.floor(accelerated * FRAME_COUNT), FRAME_COUNT - 1);
+    const playable = FRAME_COUNT - START_FRAME;
+    const index = Math.min(START_FRAME + Math.floor(accelerated * playable), FRAME_COUNT - 1);
     if (index !== currentFrame) {
       currentFrame = index;
       requestAnimationFrame(() => drawFrame(currentFrame));
@@ -281,6 +284,11 @@ ScrollTrigger.create({
     heroOverlay.style.opacity = overlayOpacity;
     heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
     heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
+    if (heroSlogan) {
+      const sloganOpacity = p > 0.6 ? Math.min(1, (p - 0.6) / 0.25) : 0;
+      heroSlogan.style.opacity = sloganOpacity;
+      heroSlogan.style.visibility = sloganOpacity <= 0.01 ? "hidden" : "visible";
+    }
   }
 });
 
@@ -545,10 +553,11 @@ function renderSalsas() {
   const grid = document.getElementById("salsas-grid");
   SALSAS.forEach((s) => {
     const card = document.createElement("div");
-    card.className = "salsa-card";
+    card.className = `salsa-card h${s.h}`;
     const heat = Array.from({ length: 4 }, (_, i) =>
       `<span class="${i < s.h ? "chile-on" : "chile-off"}">${CHILE_SVG}</span>`).join("");
     card.innerHTML = `
+      <div class="salsa-card-deco" aria-hidden="true"></div>
       <div class="salsa-card-top">
         <h4 class="salsa-name">${s.n}</h4>
         <span class="salsa-level h${s.h}">${s.label}</span>
