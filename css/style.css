@@ -143,17 +143,19 @@ button { font-family: inherit; cursor: pointer; }
 .nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(4.5px) rotate(45deg); }
 .nav-toggle[aria-expanded="true"] span:nth-child(2) { transform: translateY(-4.5px) rotate(-45deg); }
 
-/* ── CANVAS + SCRIM ─────────────────────────── */
-/* Aceleración por hardware: forzamos una capa de composición en la GPU
-   para que el scrubbing del taco no genere micro-tirones en móvil. */
-.canvas-wrap {
-  position: fixed; inset: 0; z-index: 1;
-  transform: translate3d(0, 0, 0);
-  perspective: 1000px;
-  backface-visibility: hidden;
+/* ── HERO EN VIDEO + SCRIM ──────────────────── */
+/* .hero es el driver del scroll (alto); el video queda sticky ocupando el
+   viewport mientras se hace scrubbing de su currentTime. */
+.hero { position: relative; height: 220vh; z-index: 3; }
+.hero-sticky {
+  position: sticky; top: 0;
+  height: 100vh; width: 100%;
+  overflow: hidden;
 }
-#canvas {
-  width: 100%; height: 100%; display: block;
+/* Aceleración por hardware: capa de composición en la GPU para un scrub fluido. */
+.hero-video {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
   filter: saturate(1.07) contrast(1.03);
   transform: translate3d(0, 0, 0);
   will-change: transform;
@@ -161,7 +163,7 @@ button { font-family: inherit; cursor: pointer; }
   perspective: 1000px;
 }
 #hero-scrim {
-  position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
     radial-gradient(ellipse at 50% 42%, transparent 28%, rgba(21, 17, 13, 0.4) 100%),
     linear-gradient(180deg, rgba(21, 17, 13, 0.55) 0%, rgba(21, 17, 13, 0.16) 30%, rgba(21, 17, 13, 0.06) 55%, rgba(21, 17, 13, 0.5) 100%);
@@ -169,7 +171,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ── HERO OVERLAY ───────────────────────────── */
 #hero-overlay {
-  position: fixed; inset: 0; z-index: 20;
+  position: absolute; inset: 0; z-index: 20;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
   padding: 0 5vw;
@@ -264,8 +266,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   100% { transform: translateY(0); opacity: 0; }
 }
 
-/* Zona de scroll del hero (más corta = animación más rápida) */
-#hero-scroll { height: 150vh; position: relative; z-index: 3; }
+/* La altura de .hero controla cuánto scroll mapea al video (más corta = más rápido). */
 
 /* ── BOTONES ────────────────────────────────── */
 .btn {
@@ -1207,7 +1208,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 
 @media (max-width: 768px) {
   :root { --header-h: 62px; }
-  #hero-scroll { height: 120vh; }
+  .hero { height: 180vh; }
   .nav-toggle { display: flex; }
   .header-nav {
     position: fixed; inset: 0;

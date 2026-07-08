@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    GRAN PATRÓN TAQUERÍA — app.js
-   Lenis + GSAP ScrollTrigger + canvas scrubbing + carrito WhatsApp
+   Lenis + GSAP ScrollTrigger + video scrubbing + carrito WhatsApp
    ═══════════════════════════════════════════════ */
 
 "use strict";
@@ -30,12 +30,10 @@ window.addEventListener("load", () => {
 });
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 39;
-const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
-const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
-const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
-const FRAME_SPEED = 1.3;    // el frame final (slogan) se alcanza a ~77% del scroll y se sostiene
-const START_FRAME = 0;
+const VIDEO_START = 0.3;    // segundos saltados al inicio (el taco abre más rápido)
+const VIDEO_LERP = 0.1;     // suavizado del scrub (menor = más suave)
+const VIDEO_EPSILON = 0.004; // umbral para clavar el tiempo final y frenar seeks
+const SLOGAN_HOLD = 0.85;   // el video termina a ~85% del scroll y sostiene el slogan
 const WA_NUMERO = "573143564723";
 const IMG = (slug) => `assets/img/menu/${slug}.webp`;
 const LICOR_IMG = (slug) => `assets/img/menu/${slug}.png`;
@@ -187,176 +185,90 @@ gsap.ticker.add((time) => lenis.raf(time * 1000));
 gsap.ticker.lagSmoothing(0);
 window.lenis = lenis;
 
-/* ── CANVAS DEL HERO ────────────────────────── */
-const canvas = document.getElementById("canvas");
-// desynchronized: reduce la latencia entre el dibujo y la pantalla (menos jank).
-const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
-const frames = new Array(FRAME_COUNT).fill(null);
-let currentFrame = 0;         // último frame entero solicitado
-let lastDrawnFrame = -1;      // último frame REALMENTE pintado (debounce estricto)
-let scrollTarget = 0;         // frame exacto que pide el scroll (float)
-let renderedFrame = 0;        // frame interpolado que persigue a scrollTarget
-let rafLoopActive = false;
-let bgColor = "#e9e7e4";
-let lastSampledFrame = -99;
-let heroProgress = 0;         // progreso de scroll del hero (0..1)
-let heroVisualsDirty = false; // pinta overlay/scrim dentro del rAF
-const LERP_FACTOR = 0.1;      // suavizado del scroll (menor = más suave)
-const LERP_EPSILON = 0.01;    // umbral para considerar el lerp "asentado"
-
-/* Solo reasigna width/height del canvas cuando cambian de verdad. Escribir
-   canvas.width/height (aunque sea el mismo valor) limpia el buffer e invalida
-   el caché de textura de la GPU, así que lo evitamos fuera de los resizes reales. */
-function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = Math.round(canvas.clientWidth * dpr);
-  const h = Math.round(canvas.clientHeight * dpr);
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
-  }
-  drawFrame(currentFrame);
-}
-
-function nearestLoaded(index) {
-  for (let i = index; i >= 0; i--) if (frames[i] && frames[i].complete) return frames[i];
-  return null;
-}
-
-function sampleBgColor(img) {
-  const off = document.createElement("canvas");
-  off.width = 10; off.height = 10;
-  const octx = off.getContext("2d");
-  octx.drawImage(img, 0, 0, 10, 10);
-  const corners = [[0, 0], [9, 0], [0, 9], [9, 9]];
-  let r = 0, g = 0, b = 0;
-  corners.forEach(([x, y]) => {
-    const d = octx.getImageData(x, y, 1, 1).data;
-    r += d[0]; g += d[1]; b += d[2];
-  });
-  bgColor = `rgb(${Math.round(r / 4)},${Math.round(g / 4)},${Math.round(b / 4)})`;
-}
-
-function drawFrame(index) {
-  const img = nearestLoaded(index);
-  if (!img) return;
-  if (Math.abs(index - lastSampledFrame) >= 20) {
-    sampleBgColor(img);
-    lastSampledFrame = index;
-  }
-  const cw = canvas.width, ch = canvas.height;
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  const scale = Math.max(cw / iw, ch / ih) * IMAGE_SCALE;
-  const dw = iw * scale, dh = ih * scale;
-  const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, cw, ch);
-  ctx.drawImage(img, dx, dy, dw, dh);
-  lastDrawnFrame = index;
-}
-
-function scheduleFrameDraw() {
-  if (rafLoopActive) return;
-  rafLoopActive = true;
-  requestAnimationFrame(frameLoop);
-}
-
-/* Todo el redibujado (canvas + overlays del hero) ocurre aquí, una sola
-   vez por frame de pantalla, para no bloquear el hilo principal en móvil.
-   El frame renderizado sigue al del scroll con interpolado lineal (lerp),
-   de modo que un scroll brusco se traduce en una animación suave. */
-function frameLoop() {
-  const diff = scrollTarget - renderedFrame;
-  if (Math.abs(diff) < LERP_EPSILON) {
-    renderedFrame = scrollTarget;      // snap final para clavar el último frame
-  } else {
-    renderedFrame += diff * LERP_FACTOR;
-  }
-  const idx = Math.round(renderedFrame);
-  currentFrame = idx;
-  // Debounce estricto: solo dibujamos si el frame entero cambió respecto al
-  // último pintado. Un scroll que no cruza un frame nuevo NO redibuja nada.
-  // (drawFrame actualiza lastDrawnFrame internamente.)
-  if (idx !== lastDrawnFrame) {
-    drawFrame(idx);
-  }
-  if (heroVisualsDirty) {
-    const p = heroProgress;
-    const overlayOpacity = Math.max(0, 1 - p / 0.45);
-    heroOverlay.style.opacity = overlayOpacity;
-    heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
-    heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
-    heroVisualsDirty = false;
-  }
-  // Sigue corriendo mientras el lerp no se haya asentado o queden visuales.
-  if (Math.abs(scrollTarget - renderedFrame) >= LERP_EPSILON || heroVisualsDirty) {
-    requestAnimationFrame(frameLoop);
-  } else {
-    rafLoopActive = false;
-  }
-}
-
-/* ── LOADER + PRELOAD DE TODOS LOS FRAMES ── */
+/* ── HERO EN VIDEO (scrub por scroll) ────────── */
 const loader = document.getElementById("loader");
 const loaderBar = document.getElementById("loader-bar");
 const loaderPercent = document.getElementById("loader-percent");
+const heroSection = document.getElementById("hero");
+const tacoVideo = document.getElementById("tacoVideo");
+const heroOverlay = document.getElementById("hero-overlay");
+const heroScrim = document.getElementById("hero-scrim");
 
-function loadFrame(i) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => { frames[i] = img; resolve(img); };
-    img.onerror = () => resolve(null);
-    img.src = FRAME_PATH(i);
-  });
+let videoDuration = 0;        // duración real del video (se lee en loadedmetadata)
+let targetTime = VIDEO_START; // tiempo que pide el scroll (segundos)
+let videoRafActive = false;   // el rAF loop está corriendo
+let heroInView = true;        // el hero está visible (IntersectionObserver)
+let siteRevealed = false;
+
+/* Progreso de scroll dentro de la zona del hero: 0 (arriba) → 1 (fin). */
+function getHeroProgress() {
+  const scrollable = heroSection.offsetHeight - window.innerHeight;
+  if (scrollable <= 0) return 0;
+  const scrolled = Math.min(Math.max(-heroSection.getBoundingClientRect().top, 0), scrollable);
+  return scrolled / scrollable;
 }
 
-/* Precarga inteligente: descarga TODOS los frames (con concurrencia
-   limitada para no saturar la red del móvil) antes de revelar la
-   animación, garantizando un scrub fluido sin tirones. */
-async function preloadFrames() {
-  let loaded = 0;
-  let next = 0;
+/* Traduce el progreso a tiempo de video y aplica el fundido de overlay/scrim.
+   El video llega al final (slogan) a SLOGAN_HOLD y lo sostiene el resto. */
+function updateHeroFromScroll() {
+  const p = getHeroProgress();
+  const vp = Math.min(p / SLOGAN_HOLD, 1);
+  targetTime = VIDEO_START + vp * Math.max(videoDuration - VIDEO_START, 0);
 
-  const updateProgress = () => {
-    const pct = Math.round((loaded / FRAME_COUNT) * 100);
-    loaderBar.style.width = pct + "%";
-    loaderPercent.textContent = pct + "%";
-    // El primer frame ya está listo: pintamos el póster cuanto antes.
-    if (loaded === 1) revealFirstFrame();
-  };
+  const overlayOpacity = Math.max(0, 1 - p / 0.45);
+  heroOverlay.style.opacity = overlayOpacity;
+  heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
+  heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
+}
 
-  async function worker() {
-    while (next < FRAME_COUNT) {
-      const i = next++;
-      await loadFrame(i);
-      loaded++;
-      updateProgress();
+/* Interpolado ultra-suave: el currentTime persigue a targetTime con lerp,
+   todo dentro de requestAnimationFrame. Solo hace seek si el cambio supera
+   un umbral, para no saturar el decodificador con seeks minúsculos. */
+function videoLoop() {
+  updateHeroFromScroll();
+  if (videoDuration > 0) {
+    const ct = tacoVideo.currentTime;
+    const diff = targetTime - ct;
+    if (Math.abs(diff) < VIDEO_EPSILON) {
+      if (ct !== targetTime) tacoVideo.currentTime = targetTime; // clavar el final
+    } else {
+      tacoVideo.currentTime = ct + diff * VIDEO_LERP;
     }
   }
-
-  const workers = [];
-  for (let w = 0; w < Math.min(PRELOAD_CONCURRENCY, FRAME_COUNT); w++) {
-    workers.push(worker());
+  // Sigue mientras el hero esté a la vista o el lerp no se haya asentado.
+  if (heroInView || Math.abs(targetTime - tacoVideo.currentTime) >= VIDEO_EPSILON) {
+    requestAnimationFrame(videoLoop);
+  } else {
+    videoRafActive = false;
   }
-  await Promise.all(workers);
-  revealSite();
 }
 
-function revealFirstFrame() {
-  resizeCanvas();
-  drawFrame(0);
+function startVideoLoop() {
+  if (videoRafActive) return;
+  videoRafActive = true;
+  requestAnimationFrame(videoLoop);
+}
+
+/* El loader avanza según cuánto video se ha bufferizado. */
+function updateLoaderFromBuffer() {
+  let pct = 0;
+  if (videoDuration > 0 && tacoVideo.buffered.length) {
+    pct = Math.min(100, Math.round((tacoVideo.buffered.end(tacoVideo.buffered.length - 1) / videoDuration) * 100));
+  }
+  loaderBar.style.width = pct + "%";
+  loaderPercent.textContent = pct + "%";
 }
 
 function revealSite() {
-  resizeCanvas();
-  drawFrame(0);
-  // Recalculamos posiciones ahora que el layout ya es estable y limpiamos
-  // cualquier memoria de scroll para arrancar siempre en el hero.
+  if (siteRevealed) return;
+  siteRevealed = true;
+  loaderBar.style.width = "100%";
+  loaderPercent.textContent = "100%";
+  // Limpiamos memoria de scroll y recalculamos con el layout ya estable.
   ScrollTrigger.clearScrollMemory("manual");
   ScrollTrigger.refresh();
-  // Aseguramos que al mostrar el sitio quede exactamente en el inicio.
-  // Repetimos en varios ticks porque Lenis/ScrollTrigger pueden reintentar
-  // restaurar su posición previa justo después del reveal.
+  // Arrancamos siempre en el inicio (varios ticks: Lenis/ScrollTrigger
+  // pueden reintentar restaurar su posición previa justo después).
   forceScrollTop();
   requestAnimationFrame(() => {
     forceScrollTop();
@@ -364,34 +276,33 @@ function revealSite() {
   });
   loader.classList.add("done");
   document.body.classList.add("loaded");
+  startVideoLoop();
   setTimeout(() => {
     loader.remove();
     forceScrollTop();
   }, 900);
 }
 
-/* ── SCRUB DE FRAMES EN LA ZONA DEL HERO ────── */
-const heroScroll = document.getElementById("hero-scroll");
-const heroOverlay = document.getElementById("hero-overlay");
-const heroScrim = document.getElementById("hero-scrim");
-
-ScrollTrigger.create({
-  trigger: heroScroll,
-  start: "top top",
-  end: "bottom top",
-  scrub: true,
-  onUpdate: (self) => {
-    // Productor ligero: solo guarda estado y marca "dirty". El trabajo de
-    // dibujo se hace en el rAF loop (throttle natural a 60fps).
-    const p = self.progress;
-    heroProgress = p;
-    const accelerated = Math.min(p * FRAME_SPEED, 1);
-    const playable = FRAME_COUNT - START_FRAME;
-    scrollTarget = Math.min(START_FRAME + accelerated * playable, FRAME_COUNT - 1);
-    heroVisualsDirty = true;
-    scheduleFrameDraw();
-  }
+tacoVideo.addEventListener("loadedmetadata", () => {
+  videoDuration = tacoVideo.duration || 0;
+  tacoVideo.pause();
+  try { tacoVideo.currentTime = VIDEO_START; } catch (e) { /* aún no seekable */ }
+  updateLoaderFromBuffer();
 });
+tacoVideo.addEventListener("progress", updateLoaderFromBuffer);
+tacoVideo.addEventListener("canplaythrough", revealSite);
+tacoVideo.addEventListener("loadeddata", () => { updateLoaderFromBuffer(); });
+tacoVideo.addEventListener("error", revealSite); // no dejamos el loader atascado
+// Fallback: si los eventos tardan (o el video ya está en caché), revelamos igual.
+setTimeout(revealSite, 4000);
+if (tacoVideo.readyState >= 3) revealSite();
+
+// Reactiva el rAF loop cuando el hero entra/sale del viewport (ahorro de batería).
+const heroObserver = new IntersectionObserver((entries) => {
+  heroInView = entries[0].isIntersecting;
+  if (heroInView) startVideoLoop();
+}, { threshold: 0 });
+heroObserver.observe(heroSection);
 
 /* ── HEADER SÓLIDO AL HACER SCROLL ──────────── */
 const header = document.getElementById("site-header");
@@ -685,12 +596,12 @@ function setupReel() {
 }
 
 /* ── INIT ───────────────────────────────────── */
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", () => ScrollTrigger.refresh());
 
 initMenuBlock(MENU_COCINA, "tabs-cocina", "tagline-cocina", "grid-cocina", "note-cocina");
 initMenuBlock(MENU_BARRA, "tabs-barra", "tagline-barra", "grid-barra", "note-barra");
 renderSalsas();
 setupEntrances();
 setupReel();
-preloadFrames();
+tacoVideo.load();
 ScrollTrigger.refresh();

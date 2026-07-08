@@ -39,25 +39,28 @@
     <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
   </header>
 
-  <!-- ══════════ 3. CANVAS HERO ══════════ -->
-  <div class="canvas-wrap" id="canvas-wrap"><canvas id="canvas"></canvas></div>
-  <div id="hero-scrim" aria-hidden="true"></div>
-
-  <!-- ══════════ 4. OVERLAY DE TEXTO DEL HERO ══════════ -->
-  <div id="hero-overlay">
-    <div class="hero-glow" aria-hidden="true"></div>
-    <p class="hero-kicker"><span class="hero-ornament">✦</span> <span class="hero-word">LOS</span> <span class="hero-word">PATRONES</span> <span class="hero-word">DEL</span> <span class="hero-word">TACO</span> <span class="hero-ornament">✦</span></p>
-    <h1 class="hero-title"><span class="hero-word">GRAN</span> <span class="hero-word">PATRÓN</span></h1>
-    <p class="hero-script">✿ &nbsp;Taquería · Cota, Cundinamarca&nbsp; ✿</p>
-    <div class="hero-ctas">
-      <a class="btn btn-gold" href="#menu" data-scroll="#menu">Ver el menú</a>
-      <a class="btn btn-outline" href="https://api.whatsapp.com/message/RDK4L2TG33STB1?autoload=1&app_absent=0" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+  <!-- ══════════ 3. HERO EN VIDEO (scrub por scroll) ══════════ -->
+  <section id="hero" class="hero" aria-label="Intro">
+    <span id="top"></span>
+    <div class="hero-sticky">
+      <video id="tacoVideo" class="hero-video" playsinline muted preload="auto" aria-hidden="true">
+        <source src="assets/video/taco-scroll.webm" type="video/webm">
+        <source src="assets/video/taco-scroll.mp4" type="video/mp4">
+      </video>
+      <div id="hero-scrim" aria-hidden="true"></div>
+      <div id="hero-overlay">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <p class="hero-kicker"><span class="hero-ornament">✦</span> <span class="hero-word">LOS</span> <span class="hero-word">PATRONES</span> <span class="hero-word">DEL</span> <span class="hero-word">TACO</span> <span class="hero-ornament">✦</span></p>
+        <h1 class="hero-title"><span class="hero-word">GRAN</span> <span class="hero-word">PATRÓN</span></h1>
+        <p class="hero-script">✿ &nbsp;Taquería · Cota, Cundinamarca&nbsp; ✿</p>
+        <div class="hero-ctas">
+          <a class="btn btn-gold" href="#menu" data-scroll="#menu">Ver el menú</a>
+          <a class="btn btn-outline" href="https://api.whatsapp.com/message/RDK4L2TG33STB1?autoload=1&app_absent=0" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+        </div>
+        <div class="hero-scroll-hint" aria-hidden="true"><span></span></div>
+      </div>
     </div>
-    <div class="hero-scroll-hint" aria-hidden="true"><span></span></div>
-  </div>
-
-  <div id="top"></div>
-  <div id="hero-scroll" aria-hidden="true"></div>
+  </section>
 
   <!-- ══════════ CONTENIDO ══════════ -->
   <main class="site-main">
