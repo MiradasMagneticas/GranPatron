@@ -5,6 +5,13 @@
 
 "use strict";
 
+/* La página siempre debe abrir en el inicio (no a mitad de página).
+   Desactivamos la restauración de scroll del navegador y forzamos el tope. */
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+window.scrollTo(0, 0);
+window.addEventListener("beforeunload", () => window.scrollTo(0, 0));
+
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── CONFIG ─────────────────────────────────── */
@@ -315,6 +322,9 @@ function revealFirstFrame() {
 function revealSite() {
   resizeCanvas();
   drawFrame(0);
+  // Aseguramos que al mostrar el sitio quede exactamente en el inicio.
+  window.scrollTo(0, 0);
+  if (window.lenis) window.lenis.scrollTo(0, { immediate: true, force: true });
   loader.classList.add("done");
   document.body.classList.add("loaded");
   setTimeout(() => loader.remove(), 900);
