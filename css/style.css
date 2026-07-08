@@ -293,6 +293,18 @@ body.loaded .hero-glow { animation-name: softIn2; }
   filter: blur(8px);
   z-index: -1;
 }
+/* Resplandor dorado pulsante detrás del slogan (solo opacity/transform:
+   se composita en GPU, no cuesta nada en móvil). */
+#hero-slogan::after {
+  content: ""; position: absolute; inset: -55px -110px; z-index: -1;
+  background: radial-gradient(ellipse at 50% 58%, rgba(240, 213, 134, 0.4), rgba(201, 162, 39, 0.14) 45%, transparent 72%);
+  animation: sloganGlow 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sloganGlow {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
 .slogan-kicker {
   display: block;
   font-size: clamp(0.62rem, 1.1vw, 0.8rem); font-weight: 600;
@@ -306,7 +318,12 @@ body.loaded .hero-glow { animation-name: softIn2; }
   font-size: clamp(2.3rem, 6.2vw, 4.4rem);
   line-height: 1.1;
   color: var(--dorado-claro);
-  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.92), 0 0 70px rgba(0, 0, 0, 0.6);
+  /* Sombra para contraste + halo dorado resplandeciente sobre el texto */
+  text-shadow:
+    0 2px 26px rgba(0, 0, 0, 0.92),
+    0 0 22px rgba(240, 213, 134, 0.6),
+    0 0 55px rgba(201, 162, 39, 0.5),
+    0 0 110px rgba(201, 162, 39, 0.35);
 }
 
 /* ── BOTONES ────────────────────────────────── */

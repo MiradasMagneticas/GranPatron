@@ -30,7 +30,7 @@ window.addEventListener("load", () => {
 });
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 39;
+const FRAME_COUNT = 37;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
