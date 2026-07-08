@@ -8,9 +8,9 @@
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 59;
+const FRAME_COUNT = 58;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
-const PRELOAD_FIRST = 8;    // frames antes de ocultar el loader
+const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
 const FRAME_SPEED = 2.0;    // el taco termina de abrirse antes en el scroll del hero
 const START_FRAME = 0;
@@ -175,6 +175,8 @@ let frameDirty = false;
 let rafLoopActive = false;
 let bgColor = "#e9e7e4";
 let lastSampledFrame = -99;
+let heroProgress = 0;         // progreso de scroll del hero (0..1)
+let heroVisualsDirty = false; // pinta overlay/scrim dentro del rAF
 
 function resizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -225,13 +227,23 @@ function scheduleFrameDraw() {
   requestAnimationFrame(frameLoop);
 }
 
+/* Todo el redibujado (canvas + overlays del hero) ocurre aquí, una sola
+   vez por frame de pantalla, para no bloquear el hilo principal en móvil. */
 function frameLoop() {
   if (frameDirty && targetFrame !== currentFrame) {
     currentFrame = targetFrame;
     drawFrame(currentFrame);
     frameDirty = false;
   }
-  if (frameDirty) {
+  if (heroVisualsDirty) {
+    const p = heroProgress;
+    const overlayOpacity = Math.max(0, 1 - p / 0.45);
+    heroOverlay.style.opacity = overlayOpacity;
+    heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
+    heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
+    heroVisualsDirty = false;
+  }
+  if (frameDirty || heroVisualsDirty) {
     requestAnimationFrame(frameLoop);
   } else {
     rafLoopActive = false;
@@ -252,31 +264,41 @@ function loadFrame(i) {
   });
 }
 
+/* Precarga inteligente: descarga TODOS los frames (con concurrencia
+   limitada para no saturar la red del móvil) antes de revelar la
+   animación, garantizando un scrub fluido sin tirones. */
 async function preloadFrames() {
   let loaded = 0;
-  const firstBatch = [];
-  for (let i = 0; i < PRELOAD_FIRST; i++) {
-    firstBatch.push(loadFrame(i).then(() => {
+  let next = 0;
+
+  const updateProgress = () => {
+    const pct = Math.round((loaded / FRAME_COUNT) * 100);
+    loaderBar.style.width = pct + "%";
+    loaderPercent.textContent = pct + "%";
+    // El primer frame ya está listo: pintamos el póster cuanto antes.
+    if (loaded === 1) revealFirstFrame();
+  };
+
+  async function worker() {
+    while (next < FRAME_COUNT) {
+      const i = next++;
+      await loadFrame(i);
       loaded++;
-      const pct = Math.round((loaded / PRELOAD_FIRST) * 100);
-      loaderBar.style.width = pct + "%";
-      loaderPercent.textContent = pct + "%";
-    }));
-  }
-  await Promise.all(firstBatch);
-  revealSite();
-  (async () => {
-    for (let i = PRELOAD_FIRST; i < FRAME_COUNT; i += 12) {
-      const batch = [];
-      for (let j = i; j < Math.min(i + 12, FRAME_COUNT); j++) batch.push(loadFrame(j));
-      await Promise.all(batch);
-      if (currentFrame >= i && currentFrame < i + 12) {
-        targetFrame = currentFrame;
-        frameDirty = true;
-        scheduleFrameDraw();
-      }
+      updateProgress();
     }
-  })();
+  }
+
+  const workers = [];
+  for (let w = 0; w < Math.min(PRELOAD_CONCURRENCY, FRAME_COUNT); w++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+  revealSite();
+}
+
+function revealFirstFrame() {
+  resizeCanvas();
+  drawFrame(0);
 }
 
 function revealSite() {
@@ -298,17 +320,16 @@ ScrollTrigger.create({
   end: "bottom top",
   scrub: true,
   onUpdate: (self) => {
+    // Productor ligero: solo guarda estado y marca "dirty". El trabajo de
+    // dibujo se hace en el rAF loop (throttle natural a 60fps).
     const p = self.progress;
+    heroProgress = p;
     const accelerated = Math.min(p * FRAME_SPEED, 1);
     const playable = FRAME_COUNT - START_FRAME;
-    const index = Math.min(START_FRAME + Math.floor(accelerated * playable), FRAME_COUNT - 1);
-    targetFrame = index;
+    targetFrame = Math.min(START_FRAME + Math.floor(accelerated * playable), FRAME_COUNT - 1);
     frameDirty = true;
+    heroVisualsDirty = true;
     scheduleFrameDraw();
-    const overlayOpacity = Math.max(0, 1 - p / 0.45);
-    heroOverlay.style.opacity = overlayOpacity;
-    heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
-    heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
   }
 });
 
