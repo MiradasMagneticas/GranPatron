@@ -15,11 +15,11 @@ window.addEventListener("beforeunload", () => window.scrollTo(0, 0));
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 58;
+const FRAME_COUNT = 59;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
-const FRAME_SPEED = 2.0;    // el taco termina de abrirse antes en el scroll del hero
+const FRAME_SPEED = 1.0;    // 1:1 con el scroll del hero → frame 59 (slogan) al final
 const START_FRAME = 0;
 const WA_NUMERO = "573143564723";
 const IMG = (slug) => `assets/img/menu/${slug}.webp`;
@@ -268,7 +268,7 @@ function frameLoop() {
   }
 }
 
-/* ── LOADER (10 primeros frames, resto en bg) ── */
+/* ── LOADER + PRELOAD DE TODOS LOS FRAMES ── */
 const loader = document.getElementById("loader");
 const loaderBar = document.getElementById("loader-bar");
 const loaderPercent = document.getElementById("loader-percent");
