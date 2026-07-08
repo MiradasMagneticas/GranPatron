@@ -1328,3 +1328,33 @@ body.loaded .hero-glow { animation-name: softIn2; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── FALLBACK DE VISIBILIDAD (BLINDAJE DEL MENÚ) ─────────────────────
+   Las animaciones de entrada (GSAP) ocultan elementos con opacity:0 inline
+   y los revelan por ScrollTrigger. Si ese JS NO corre (GSAP ausente, navegador
+   viejo, error temprano), <html> nunca recibe la clase .js-anim y aquí forzamos
+   que TODO se vea de forma nativa e inmediata. Cuando el JS sí maneja las
+   animaciones (html.js-anim), cedemos el control de opacidad a GSAP. */
+html:not(.js-anim) [data-animation],
+html:not(.js-anim) [data-animation] * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+}
+
+/* El menú NUNCA debe quedar en display:none o visibility:hidden, con o sin JS. */
+#menu,
+.section-menu,
+.menu-block,
+.menu-tabs,
+.menu-tagline,
+.menu-grid,
+.menu-card,
+.licor-card,
+.menu-note,
+.menu-block-head {
+  visibility: visible !important;
+}
+

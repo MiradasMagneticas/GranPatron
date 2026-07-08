@@ -530,7 +530,13 @@ const ENTRANCES = {
 };
 
 function setupEntrances() {
+  // Sin GSAP/ScrollTrigger no ocultamos nada: el contenido queda visible nativo.
   if (!HAS_ST) return;
+  // Marca que las animaciones SÍ se van a manejar por JS. Mientras esta clase
+  // no exista, el CSS fuerza todo visible (fallback si el script no corre).
+  document.documentElement.classList.add("js-anim");
+
+  const tweens = [];
   document.querySelectorAll("[data-animation]").forEach((el) => {
     const cfg = ENTRANCES[el.dataset.animation];
     if (!cfg) return;
@@ -557,7 +563,20 @@ function setupEntrances() {
       once: true,
       onEnter: () => tween.play()
     });
+    tweens.push(tween);
   });
+
+  // RED DE SEGURIDAD: en algunos navegadores el ScrollTrigger puede no
+  // dispararse (cálculo de posiciones, proxy de scroll, etc.). Para que el
+  // contenido —sobre todo la carta— NUNCA quede en opacity:0, forzamos el
+  // estado final de cualquier tween que no se haya revelado.
+  const revealPending = () => {
+    tweens.forEach((tween) => {
+      if (tween.paused() && tween.progress() === 0) tween.progress(1);
+    });
+  };
+  window.addEventListener("load", () => setTimeout(revealPending, 1000));
+  setTimeout(revealPending, 2800);
 }
 
 /* ── MENÚ INTERACTIVO (Cocina + Barra) ──────── */
@@ -661,6 +680,16 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
 
   renderTabs();
   renderGrid(false);
+
+  // INICIALIZACIÓN DIRECTA: apenas la carta queda pintada, quitamos cualquier
+  // clase de "oculto/loading" y forzamos visibilidad nativa en los contenedores.
+  // Así el navegador la pinta al instante, sin depender de GSAP ni de scroll.
+  [tabsEl, gridEl, taglineEl, noteEl, gridEl.closest(".menu-block")].forEach((node) => {
+    if (!node) return;
+    node.classList.remove("hidden", "is-hidden", "loading", "is-loading");
+    node.style.visibility = "visible";
+    node.style.opacity = "1";
+  });
 }
 
 /* ── CARRITO → WHATSAPP ─────────────────────── */
