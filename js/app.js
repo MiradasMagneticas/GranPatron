@@ -169,14 +169,16 @@ window.lenis = lenis;
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const frames = new Array(FRAME_COUNT).fill(null);
-let currentFrame = 0;
-let targetFrame = 0;
-let frameDirty = false;
+let currentFrame = 0;         // último frame entero dibujado
+let scrollTarget = 0;         // frame exacto que pide el scroll (float)
+let renderedFrame = 0;        // frame interpolado que persigue a scrollTarget
 let rafLoopActive = false;
 let bgColor = "#e9e7e4";
 let lastSampledFrame = -99;
 let heroProgress = 0;         // progreso de scroll del hero (0..1)
 let heroVisualsDirty = false; // pinta overlay/scrim dentro del rAF
+const LERP_FACTOR = 0.1;      // suavizado del scroll (menor = más suave)
+const LERP_EPSILON = 0.01;    // umbral para considerar el lerp "asentado"
 
 function resizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -228,12 +230,20 @@ function scheduleFrameDraw() {
 }
 
 /* Todo el redibujado (canvas + overlays del hero) ocurre aquí, una sola
-   vez por frame de pantalla, para no bloquear el hilo principal en móvil. */
+   vez por frame de pantalla, para no bloquear el hilo principal en móvil.
+   El frame renderizado sigue al del scroll con interpolado lineal (lerp),
+   de modo que un scroll brusco se traduce en una animación suave. */
 function frameLoop() {
-  if (frameDirty && targetFrame !== currentFrame) {
-    currentFrame = targetFrame;
+  const diff = scrollTarget - renderedFrame;
+  if (Math.abs(diff) < LERP_EPSILON) {
+    renderedFrame = scrollTarget;      // snap final para clavar el último frame
+  } else {
+    renderedFrame += diff * LERP_FACTOR;
+  }
+  const idx = Math.round(renderedFrame);
+  if (idx !== currentFrame) {
+    currentFrame = idx;
     drawFrame(currentFrame);
-    frameDirty = false;
   }
   if (heroVisualsDirty) {
     const p = heroProgress;
@@ -243,7 +253,8 @@ function frameLoop() {
     heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
     heroVisualsDirty = false;
   }
-  if (frameDirty || heroVisualsDirty) {
+  // Sigue corriendo mientras el lerp no se haya asentado o queden visuales.
+  if (Math.abs(scrollTarget - renderedFrame) >= LERP_EPSILON || heroVisualsDirty) {
     requestAnimationFrame(frameLoop);
   } else {
     rafLoopActive = false;
@@ -326,8 +337,7 @@ ScrollTrigger.create({
     heroProgress = p;
     const accelerated = Math.min(p * FRAME_SPEED, 1);
     const playable = FRAME_COUNT - START_FRAME;
-    targetFrame = Math.min(START_FRAME + Math.floor(accelerated * playable), FRAME_COUNT - 1);
-    frameDirty = true;
+    scrollTarget = Math.min(START_FRAME + accelerated * playable, FRAME_COUNT - 1);
     heroVisualsDirty = true;
     scheduleFrameDraw();
   }
