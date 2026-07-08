@@ -151,6 +151,15 @@ button { font-family: inherit; cursor: pointer; }
   transform: translate3d(0, 0, 0);
   perspective: 1000px;
   backface-visibility: hidden;
+  /* Fondo de respaldo: el frame inicial del taco vive DETRÁS del canvas.
+     Si en un scroll ultra rápido el canvas tarda un milisegundo en repintar
+     (o su capa GPU parpadea), el ojo ve esta imagen idéntica en vez de un
+     fondo vacío. No se ve en operación normal porque el canvas es opaco. */
+  background-color: #e9e7e4;
+  background-image: url("../assets/frames/frame_001.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 #canvas {
   width: 100%; height: 100%; display: block;
