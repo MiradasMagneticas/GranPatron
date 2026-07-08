@@ -143,19 +143,17 @@ button { font-family: inherit; cursor: pointer; }
 .nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(4.5px) rotate(45deg); }
 .nav-toggle[aria-expanded="true"] span:nth-child(2) { transform: translateY(-4.5px) rotate(-45deg); }
 
-/* ── HERO EN VIDEO + SCRIM ──────────────────── */
-/* .hero es el driver del scroll (alto); el video queda sticky ocupando el
-   viewport mientras se hace scrubbing de su currentTime. */
-.hero { position: relative; height: 220vh; z-index: 3; }
-.hero-sticky {
-  position: sticky; top: 0;
-  height: 100vh; width: 100%;
-  overflow: hidden;
+/* ── CANVAS + SCRIM ─────────────────────────── */
+/* Aceleración por hardware: forzamos una capa de composición en la GPU
+   para que el scrubbing del taco no genere micro-tirones en móvil. */
+.canvas-wrap {
+  position: fixed; inset: 0; z-index: 1;
+  transform: translate3d(0, 0, 0);
+  perspective: 1000px;
+  backface-visibility: hidden;
 }
-/* Aceleración por hardware: capa de composición en la GPU para un scrub fluido. */
-.hero-video {
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;
+#canvas {
+  width: 100%; height: 100%; display: block;
   filter: saturate(1.07) contrast(1.03);
   transform: translate3d(0, 0, 0);
   will-change: transform;
@@ -163,7 +161,7 @@ button { font-family: inherit; cursor: pointer; }
   perspective: 1000px;
 }
 #hero-scrim {
-  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
   background:
     radial-gradient(ellipse at 50% 42%, transparent 28%, rgba(21, 17, 13, 0.4) 100%),
     linear-gradient(180deg, rgba(21, 17, 13, 0.55) 0%, rgba(21, 17, 13, 0.16) 30%, rgba(21, 17, 13, 0.06) 55%, rgba(21, 17, 13, 0.5) 100%);
@@ -171,7 +169,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ── HERO OVERLAY ───────────────────────────── */
 #hero-overlay {
-  position: absolute; inset: 0; z-index: 20;
+  position: fixed; inset: 0; z-index: 20;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
   padding: 0 5vw;
@@ -192,10 +190,12 @@ body.loaded .hero-glow { animation: softIn 2s ease 0.9s forwards; }
   opacity: 0;
   transform: translateY(60px);
 }
-body.loaded .hero-kicker .hero-word:nth-of-type(1) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.30s forwards; }
-body.loaded .hero-kicker .hero-word:nth-of-type(2) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.43s forwards; }
-body.loaded .hero-kicker .hero-word:nth-of-type(3) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
-body.loaded .hero-kicker .hero-word:nth-of-type(4) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.69s forwards; }
+/* Ojo: los ✦ ornamentos también son <span>, así que contamos con nth-child
+   (posiciones 2-5) — nth-of-type dejaba a "TACO" sin animación (invisible). */
+body.loaded .hero-kicker .hero-word:nth-child(2) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.30s forwards; }
+body.loaded .hero-kicker .hero-word:nth-child(3) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.43s forwards; }
+body.loaded .hero-kicker .hero-word:nth-child(4) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
+body.loaded .hero-kicker .hero-word:nth-child(5) { animation: wordUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.69s forwards; }
 body.loaded .hero-kicker .hero-ornament { animation: wordUp 0.9s ease 0.85s forwards; }
 body.loaded .hero-title .hero-word:nth-child(1) { animation: wordUp 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.55s forwards; }
 body.loaded .hero-title .hero-word:nth-child(2) { animation: wordUp 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.72s forwards; }
@@ -226,11 +226,16 @@ body.loaded .hero-glow { animation-name: softIn2; }
   font-size: clamp(3.4rem, 13.5vw, 13.5rem);
   line-height: 0.95;
   letter-spacing: 0.01em;
+  color: var(--masa-cruda); /* fallback si background-clip no aplica */
+  filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 46px rgba(0, 0, 0, 0.35));
+}
+/* El gradiente va POR PALABRA: background-clip:text en el padre se rompe
+   cuando los hijos tienen transform (animación wordUp) en Chrome. */
+.hero-title .hero-word {
   background: linear-gradient(180deg, #FFFDF5 8%, var(--masa-cruda) 45%, var(--dorado-claro) 72%, var(--dorado-patron) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 46px rgba(0, 0, 0, 0.35));
 }
 .hero-script {
   position: relative;
@@ -266,7 +271,43 @@ body.loaded .hero-glow { animation-name: softIn2; }
   100% { transform: translateY(0); opacity: 0; }
 }
 
-/* La altura de .hero controla cuánto scroll mapea al video (más corta = más rápido). */
+/* Zona de scroll del hero (más corta = animación más rápida) */
+/* Alto extra: la animacion termina antes y el ultimo frame (slogan) queda
+   anclado/congelado mientras el usuario sigue bajando un poco mas. */
+#hero-scroll { height: 210vh; position: relative; z-index: 3; }
+
+/* ── SLOGAN SOBRE EL TACO ABIERTO ───────────── */
+/* Aparece cuando la animación llega a los frames finales; su opacidad la
+   maneja el rAF loop del hero (js/app.js), no ScrollTrigger. */
+#hero-slogan {
+  position: fixed; left: 50%; bottom: clamp(52px, 11vh, 120px); z-index: 5;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  will-change: opacity, transform;
+}
+#hero-slogan::before {
+  content: ""; position: absolute; inset: -34px -70px;
+  background: radial-gradient(ellipse, rgba(21, 17, 13, 0.55), transparent 70%);
+  filter: blur(8px);
+  z-index: -1;
+}
+.slogan-kicker {
+  display: block;
+  font-size: clamp(0.62rem, 1.1vw, 0.8rem); font-weight: 600;
+  letter-spacing: 0.5em; text-indent: 0.5em; text-transform: uppercase;
+  color: var(--masa-cruda);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.9);
+  margin-bottom: 8px;
+}
+.slogan-text {
+  font-family: var(--font-script); font-style: italic; font-weight: 700;
+  font-size: clamp(2.3rem, 6.2vw, 4.4rem);
+  line-height: 1.1;
+  color: var(--dorado-claro);
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.92), 0 0 70px rgba(0, 0, 0, 0.6);
+}
 
 /* ── BOTONES ────────────────────────────────── */
 .btn {
@@ -1134,6 +1175,9 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .btn-send { width: 100%; padding: 18px; font-size: 0.95rem; }
 
 /* Botón flotante */
+/* El display de abajo pisa el atributo [hidden]; lo restauramos explícito
+   para que el pill NO aparezca con el carrito vacío. */
+.cart-pill[hidden] { display: none !important; }
 .cart-pill {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
   z-index: 90;
@@ -1208,7 +1252,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 
 @media (max-width: 768px) {
   :root { --header-h: 62px; }
-  .hero { height: 180vh; }
+  #hero-scroll { height: 175vh; }
   .nav-toggle { display: flex; }
   .header-nav {
     position: fixed; inset: 0;
