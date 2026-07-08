@@ -11,117 +11,146 @@ gsap.registerPlugin(ScrollTrigger);
 const FRAME_COUNT = 140;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(4, "0")}.webp`;
 const PRELOAD_FIRST = 10;   // frames antes de ocultar el loader
-const IMAGE_SCALE = 0.86;   // padded cover
-const FRAME_SPEED = 1.4;    // el taco termina de abrirse ~72% del scroll del hero
+const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
+const FRAME_SPEED = 1.55;   // el taco termina de abrirse ~64% del scroll del hero
 const WA_NUMERO = "573143564723";
+const IMG = (slug) => `assets/img/menu/${slug}.webp`;
 
 const fmt = (n) => "$" + n.toLocaleString("es-CO");
 
 /* ── MENÚ (transcrito exacto de la carta 2026) ─ */
-const MENU = [
+const MENU_COCINA = [
   {
     id: "entradas", tab: "Entradas", tagline: "“Para ir calentando motores”",
-    tile: { img: "assets/img/plato-taquitos.jpg", alt: "Taquitos dorados con guacamole y limón", caption: "Directo del comal" },
-    groups: [{ items: [
-      { n: "Volcanes", d: "Base de tortilla crujiente, queso gratinado, proteína a elegir.", p: 10000 },
-      { n: "Esquites", d: "Maíz desgranado, crema, queso, chicharrón, limón.", p: 25000 },
-      { n: "Nachos Sencillos", d: "Totopos, frijoles refritos, guacamole.", p: 16000 },
-      { n: "Dorilocos", d: "Doritos, birria, lechuga, pico de gallo, guacamole, limón.", p: 21000 },
-      { n: "Flautas x3", d: "Tinga de pollo, salsas y crema.", p: 20000 },
-      { n: "Chicharrón con Guacamole", d: "Crujiente por fuera, jugoso por dentro, con guacamole de la casa.", p: 28000, img: "assets/img/plato-chicharron.jpg" }
-    ]}]
+    items: [
+      { n: "Volcanes", d: "Base de tortilla crujiente, queso gratinado, proteína a elegir.", p: 10000, img: IMG("volcanes") },
+      { n: "Esquites", d: "Maíz desgranado, crema, queso, chicharrón, limón.", p: 25000, img: IMG("esquites") },
+      { n: "Nachos Sencillos", d: "Totopos, frijoles refritos, guacamole.", p: 16000, img: IMG("nachos-sencillos") },
+      { n: "Dorilocos", d: "Doritos, birria, lechuga, pico de gallo, guacamole, limón.", p: 21000, img: IMG("dorilocos") },
+      { n: "Flautas x3", d: "Tinga de pollo, salsas y crema.", p: 20000, img: IMG("flautas") },
+      { n: "Chicharrón con Guacamole", d: "Crujiente por fuera, jugoso por dentro, con guacamole de la casa.", p: 28000, img: IMG("chicharron-guacamole") }
+    ]
   },
   {
     id: "especiales", tab: "Especiales", tagline: "“Las joyas de la casa”",
-    tile: { img: "assets/img/plato-tostada.jpg", alt: "Tostada con carne, crema y cebolla morada", caption: "Las joyas de la casa" },
-    groups: [{ items: [
-      { n: "Torta Mexicana", d: "Pan bolillo, carne, guacamole, queso, lechuga, cebolla encurtida.", p: 24000 },
-      { n: "Chilaquiles rojos o verdes", d: "Totopos, huevo, queso, crema.", p: 25000 },
-      { n: "Sopa Tarasca", d: "Pollo desmenuzado, mazorca, aguacate, tortilla frita, crema, queso costeño.", p: 25000, img: "assets/img/plato-sopa.jpg" },
-      { n: "Birriamen", d: "Fideos japoneses en consomé de birria, carne desmechada, picadillo.", p: 25000 },
-      { n: "Nachos Gran Patrón", d: "Carne, queso, guacamole, pico de gallo, sour cream.", p: 30000, img: "assets/img/plato-nachos.jpg" },
-      { n: "Bandeja Gran Patrón", d: "2 tacos + 1 quesadilla + 2 flautas de pollo.", p: 48000, featured: true }
-    ]}]
+    items: [
+      { n: "Torta Mexicana", d: "Pan bolillo, carne, guacamole, queso, lechuga, cebolla encurtida.", p: 24000, img: IMG("torta-mexicana") },
+      { n: "Chilaquiles rojos o verdes", d: "Totopos, huevo, queso, crema.", p: 25000, img: IMG("chilaquiles") },
+      { n: "Sopa Tarasca", d: "Pollo desmenuzado, mazorca, aguacate, tortilla frita, crema, queso costeño.", p: 25000, img: IMG("sopa-tarasca") },
+      { n: "Birriamen", d: "Fideos japoneses en consomé de birria, carne desmechada, picadillo.", p: 25000, img: IMG("birriamen") },
+      { n: "Nachos Gran Patrón", d: "Carne, queso, guacamole, pico de gallo, sour cream.", p: 30000, img: IMG("nachos-gran-patron") },
+      { n: "Bandeja Gran Patrón", d: "2 tacos + 1 quesadilla + 2 flautas de pollo.", p: 48000, img: IMG("bandeja-gran-patron"), featured: true }
+    ]
   },
   {
     id: "tacos", tab: "Tacos x3", tagline: "De a tres, como manda la tradición",
-    tile: { img: "assets/img/plato-tacos-1.jpg", alt: "Tacos surtidos en plato verde", caption: "Los patrones del taco" },
-    groups: [{ items: [
-      { n: "Taco individual", d: "Para los indecisos: uno solo, del sabor que quieras.", p: 10000 },
-      { n: "Birria", d: "El clásico jugoso de la casa, con su consomé.", p: 27000 },
-      { n: "Pastor", d: "Marinado al estilo CDMX, con piña.", p: 25000 },
-      { n: "Carnitas", d: "Cerdo confitado, dorado y tierno.", p: 27000 },
-      { n: "Tinga de pollo", d: "Pollo deshebrado en salsa de chipotle.", p: 25000 },
-      { n: "Gobernador", d: "Camarón, queso fundido y tortilla dorada.", p: 30000 },
-      { n: "Suadero", d: "Res suave, sellada en el comal.", p: 25000 },
-      { n: "Asada", d: "Res a la parrilla, sencillo y perfecto.", p: 25000 },
-      { n: "Choriqueso", d: "Chorizo con queso fundido.", p: 25000 },
-      { n: "Vegetariano", d: "De la huerta al comal.", p: 17000 },
-      { n: "Chinchulines", d: "Para los valientes de verdad.", p: 25000 },
-      { n: "Chicharrón", d: "Crocante, con su guacamole.", p: 25000 },
-      { n: "Temporada", d: "Pregunta por el taco del momento.", p: 25000 },
-      { n: "Taquiza x12", d: "12 tacos surtidos para compartir en manada.", p: 110000, featured: true }
-    ]}]
+    items: [
+      { n: "Taco individual", d: "Para los indecisos: uno solo, del sabor que quieras.", p: 10000, img: IMG("taco-suadero") },
+      { n: "Birria", d: "El clásico jugoso de la casa, con su consomé.", p: 27000, img: IMG("taco-birria") },
+      { n: "Pastor", d: "Marinado al estilo CDMX, con piña.", p: 25000, img: IMG("taco-pastor") },
+      { n: "Carnitas", d: "Cerdo confitado, dorado y tierno.", p: 27000, img: IMG("taco-carnitas") },
+      { n: "Tinga de pollo", d: "Pollo deshebrado en salsa de chipotle.", p: 25000, img: IMG("taco-tinga") },
+      { n: "Gobernador", d: "Camarón, queso fundido y tortilla dorada.", p: 30000, img: IMG("taco-gobernador") },
+      { n: "Suadero", d: "Res suave, sellada en el comal.", p: 25000, img: IMG("taco-suadero") },
+      { n: "Asada", d: "Res a la parrilla, con guacamole.", p: 25000, img: IMG("taco-asada") },
+      { n: "Choriqueso", d: "Chorizo con queso fundido.", p: 25000, img: IMG("taco-choriqueso") },
+      { n: "Vegetariano", d: "De la huerta al comal.", p: 17000, img: IMG("taco-vegetariano") },
+      { n: "Chinchulines", d: "Para los valientes de verdad.", p: 25000, img: IMG("taco-chinchulines") },
+      { n: "Chicharrón", d: "Crocante, con su guacamole.", p: 25000, img: IMG("taco-chicharron") },
+      { n: "Temporada", d: "Pregunta por el taco del momento.", p: 25000, img: IMG("taco-temporada") },
+      { n: "Taquiza x12", d: "12 tacos surtidos para compartir en manada.", p: 110000, img: "assets/img/plato-tacos-1.jpg", featured: true }
+    ]
   },
   {
     id: "burritos", tab: "Burritos & Quesadillas", tagline: "Abrazos envueltos en tortilla",
     note: "Proteínas disponibles para burrito/quesadilla: Birria, Pastor, Carnitas, Tinga, Suadero, Asada, Chorizo, Chinchulines, Hígado, Chicharrón.",
-    groups: [{ items: [
-      { n: "Burrito Gran Patrón", d: "Proteína a elegir, tortilla de harina, queso, arroz, frijol, guacamole, sour cream, pico de gallo, salsas.", p: 39000, featured: true },
-      { n: "Burrito", d: "220g proteína, guacamole, picadillo.", p: 30000 },
-      { n: "Quesadilla", d: "Proteína a elegir, tortilla de maíz, queso, picadillo, salsas.", p: 18000 },
-      { n: "Solo Queso", d: "Quesadilla clásica, pura felicidad fundida.", p: 12000 },
-      { n: "Menú Infantil", d: "Miniquesadilla asada o pollo, sin picante, jugo de caja + huevo sorpresa.", p: 25000 }
-    ]}]
+    items: [
+      { n: "Burrito Gran Patrón", d: "Proteína a elegir, tortilla de harina, queso, arroz, frijol, guacamole, sour cream, pico de gallo, salsas.", p: 39000, img: IMG("burrito-gran-patron"), featured: true },
+      { n: "Burrito", d: "220g proteína, guacamole, picadillo.", p: 30000, img: IMG("burrito") },
+      { n: "Quesadilla", d: "Proteína a elegir, tortilla de maíz, queso, picadillo, salsas.", p: 18000, img: IMG("quesadilla") },
+      { n: "Solo Queso", d: "Quesadilla clásica, pura felicidad fundida.", p: 12000, img: IMG("solo-queso") },
+      { n: "Menú Infantil", d: "Miniquesadilla asada o pollo, sin picante, jugo de caja + huevo sorpresa.", p: 25000, img: IMG("menu-infantil") }
+    ]
   },
   {
     id: "postres", tab: "Postres", tagline: "El final feliz",
-    groups: [{ items: [
-      { n: "Cajeta Tradicional", d: "Dulce de leche de cabra, como en México.", p: 12000 },
-      { n: "Churros", d: "Recién hechos, con azúcar y canela.", p: 16000 },
-      { n: "Bola de Fuego", d: "El postre con espectáculo incluido.", p: 17000 },
-      { n: "Nieves (helado)", d: "Para apagar la Salsa Fantasma.", p: 7000 }
-    ]}]
+    items: [
+      { n: "Cajeta Tradicional", d: "Dulce de leche de cabra, como en México.", p: 12000, img: IMG("cajeta") },
+      { n: "Churros", d: "Recién hechos, con azúcar y canela.", p: 16000, img: IMG("churros") },
+      { n: "Bola de Fuego", d: "El postre con espectáculo incluido.", p: 17000, img: IMG("bola-de-fuego") },
+      { n: "Nieves (helado)", d: "Para apagar la Salsa Fantasma.", p: 7000, img: IMG("nieves") }
+    ]
+  }
+];
+
+const MENU_BARRA = [
+  {
+    id: "bebidas", tab: "Bebidas", tagline: "Aguas frescas y limonadas de la casa",
+    items: [
+      { n: "Horchata", d: "Arroz, canela y tradición.", p: 9000, img: IMG("horchata") },
+      { n: "Agua de Jamaica", p: 8000, img: IMG("agua-jamaica") },
+      { n: "Agua de Pepino", p: 8000, img: IMG("agua-pepino") },
+      { n: "Agua Tamarindo", p: 8000, img: IMG("agua-tamarindo") },
+      { n: "Gaseosa", p: 7000, img: IMG("gaseosa") },
+      { n: "Agua Natural", p: 6000, img: IMG("agua-natural") },
+      { n: "Limonada", p: 10000, img: IMG("limonada") },
+      { n: "Limonada Cerezada", p: 14000, img: IMG("limonada-cerezada") },
+      { n: "Limonada de Coco", p: 16000, img: IMG("limonada-coco") },
+      { n: "Gatorade", p: 8000, img: IMG("gatorade") },
+      { n: "Soda Saborizada", d: "Frutos rojos o amarillos.", p: 15000, img: IMG("soda-saborizada") }
+    ]
   },
   {
-    id: "bebidas", tab: "Bebidas & Licores", tagline: "Para brindar como patrón",
-    tile: { img: "assets/img/plato-hero-1.jpg", alt: "Cerveza Modelo con tacos en el ambiente del local", caption: "El brindis de la casa" },
-    groups: [
-      { title: "Bebidas", items: [
-        { n: "Horchata", p: 9000 }, { n: "Agua de Jamaica", p: 8000 },
-        { n: "Agua de Pepino", p: 8000 }, { n: "Agua Tamarindo", p: 8000 },
-        { n: "Gaseosa", p: 7000 }, { n: "Agua Natural", p: 6000 },
-        { n: "Limonada", p: 10000 }, { n: "Limonada Cerezada", p: 14000 },
-        { n: "Limonada de Coco", p: 16000 }, { n: "Cerveza Nacional", p: 12000 },
-        { n: "Gatorade", p: 8000 }, { n: "Soda Saborizada", d: "Frutos rojos o amarillos.", p: 15000 }
-      ]},
-      { title: "Cerveza Importada", items: [
-        { n: "Coronita", p: 11000 }, { n: "Cerveza Sol", p: 11000 },
-        { n: "Stella Artois", p: 15000 }, { n: "Corona", p: 18000 },
-        { n: "Cerveza Modelo", p: 20000 }
-      ]},
-      { title: "Cócteles", items: [
-        { n: "Paloma", p: 20000 }, { n: "El Azulito", p: 20000 },
-        { n: "Paloma Sinaloense", p: 24000 }, { n: "Cantarito Personal", p: 25000 },
-        { n: "Perla Negra", p: 30000 }, { n: "Cantarito x10 personas", p: 200000, featured: true }
-      ]},
-      { title: "Licores", items: [
-        { n: "½ Aguardiente Amarillo", p: 75000 }, { n: "½ Aguardiente Ant. Azul", p: 75000 },
-        { n: "Aguardiente Néctar Verde", p: 110000 }, { n: "Aguardiente Ant. Azul", p: 130000 },
-        { n: "Aguardiente Amarillo", p: 130000 }, { n: "Tequila Jimador Blanco", p: 180000 },
-        { n: "Tequila Jimador Reposado", p: 190000 }, { n: "Tequila Patrón Reposado", p: 450000 },
-        { n: "Don Julio 70 Cristalino", p: 600000 }, { n: "Whiskey Buchanans 12 Años", p: 250000 },
-        { n: "Whiskey Buchanans Two S", p: 360000 }
-      ]}
+    id: "cervezas", tab: "Cervezas", tagline: "Bien frías, como debe ser",
+    items: [
+      { n: "Cerveza Nacional", p: 12000, img: IMG("cerveza-nacional") },
+      { n: "Coronita", p: 11000, img: IMG("coronita") },
+      { n: "Cerveza Sol", p: 11000, img: IMG("cerveza-sol") },
+      { n: "Stella Artois", p: 15000, img: IMG("stella-artois") },
+      { n: "Corona", p: 18000, img: IMG("corona") },
+      { n: "Cerveza Modelo", p: 20000, img: IMG("cerveza-modelo") }
+    ]
+  },
+  {
+    id: "cocteles", tab: "Cócteles", tagline: "Aquí empieza la rumba",
+    items: [
+      { n: "Paloma", d: "Tequila, toronja y tajín.", p: 20000, img: IMG("paloma") },
+      { n: "El Azulito", d: "Azul eléctrico, con gomitas.", p: 20000, img: IMG("el-azulito") },
+      { n: "Paloma Sinaloense", d: "La paloma, pero con carácter.", p: 24000, img: IMG("paloma-sinaloense") },
+      { n: "Cantarito Personal", d: "Cítricos y tequila en jarrito de barro.", p: 25000, img: IMG("cantarito-personal") },
+      { n: "Perla Negra", d: "Oscura, misteriosa y peligrosa.", p: 30000, img: IMG("perla-negra") },
+      { n: "Cantarito x10 personas", d: "El jarro gigante para toda la mesa.", p: 200000, img: IMG("cantarito-x10"), featured: true }
+    ]
+  },
+  {
+    id: "licores", tab: "Licores", tagline: "La reserva del patrón", premium: true,
+    items: [
+      { n: "½ Aguardiente Amarillo", p: 75000, img: IMG("aguardiente-amarillo-media"), tag: "Media botella", type: "Aguardiente" },
+      { n: "½ Aguardiente Ant. Azul", p: 75000, img: IMG("aguardiente-antioqueno-media"), tag: "Media botella", type: "Aguardiente" },
+      { n: "Aguardiente Néctar Verde", p: 110000, img: IMG("nectar-verde"), tag: "Botella", type: "Aguardiente" },
+      { n: "Aguardiente Ant. Azul", p: 130000, img: IMG("aguardiente-antioqueno"), tag: "Botella", type: "Aguardiente" },
+      { n: "Aguardiente Amarillo", p: 130000, img: IMG("aguardiente-amarillo"), tag: "Botella", type: "Aguardiente" },
+      { n: "Tequila Jimador Blanco", p: 180000, img: IMG("jimador-blanco"), tag: "Botella", type: "Tequila" },
+      { n: "Tequila Jimador Reposado", p: 190000, img: IMG("jimador-reposado"), tag: "Botella", type: "Tequila" },
+      { n: "Tequila Patrón Reposado", p: 450000, img: null, tag: "Botella", type: "Tequila" },
+      { n: "Don Julio 70 Cristalino", p: 600000, img: IMG("don-julio-70"), tag: "Botella", type: "Tequila" },
+      { n: "Whiskey Buchanans 12 Años", p: 250000, img: IMG("buchanans-12"), tag: "Botella", type: "Whisky" },
+      { n: "Whiskey Buchanans Two S", p: 360000, img: IMG("buchanans-two-souls"), tag: "Botella", type: "Whisky" }
     ]
   }
 ];
 
 const SALSAS = [
-  { n: "Taquera verde", h: 1 }, { n: "Guayaba", h: 2 }, { n: "Maracuyá", h: 2 },
-  { n: "Lulo", h: 3 }, { n: "Salsa Gran Patrón", h: 3 },
-  { n: "Molcajeteada", h: 4 }, { n: "Salsa Fantasma", h: 4 }
+  { n: "Taquera verde", f: "La de siempre: fresca y confiable", h: 1, label: "Suave" },
+  { n: "Guayaba", f: "Dulce, con carácter escondido", h: 2, label: "Media" },
+  { n: "Maracuyá", f: "Tropical y engañosamente amable", h: 2, label: "Media" },
+  { n: "Lulo", f: "Ácida y brava, bien colombiana", h: 3, label: "Fuerte" },
+  { n: "Salsa Gran Patrón", f: "La receta secreta de la casa", h: 3, label: "Fuerte" },
+  { n: "Molcajeteada", f: "Molida en molcajete, con humo", h: 4, label: "¡Extrema!" },
+  { n: "Salsa Fantasma", f: "Solo para valientes de verdad", h: 4, label: "¡Extrema!" }
 ];
+
+const CHILE_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.2 3.2c.5-.9 1.6-1.4 2.6-1.1-.2.8-.8 1.5-1.6 1.8.9.5 1.5 1.4 1.6 2.5.1 1.5-.7 8.2-5.4 12.9-3 3-6.9 4-9.9 3.4-.8-.2-1-.7-.3-1.1 4.8-2.6 7.4-5 8.9-8.7.8-2 .9-4.4.5-6.3-.2-1.2.4-2.4 1.5-2.9.7-.3 1.5-.3 2.1-.5z"/></svg>`;
 
 /* ── LENIS + SCROLLTRIGGER ──────────────────── */
 const lenis = new Lenis({
@@ -212,7 +241,6 @@ async function preloadFrames() {
   }
   await Promise.all(firstBatch);
   revealSite();
-  // Resto en segundo plano, en tandas para no saturar
   (async () => {
     for (let i = PRELOAD_FIRST; i < FRAME_COUNT; i += 12) {
       const batch = [];
@@ -243,18 +271,15 @@ ScrollTrigger.create({
   scrub: true,
   onUpdate: (self) => {
     const p = self.progress;
-    // Frames acelerados: el taco termina de abrirse ~72% del hero
     const accelerated = Math.min(p * FRAME_SPEED, 1);
     const index = Math.min(Math.floor(accelerated * FRAME_COUNT), FRAME_COUNT - 1);
     if (index !== currentFrame) {
       currentFrame = index;
       requestAnimationFrame(() => drawFrame(currentFrame));
     }
-    // Fade del overlay de texto (0 → 45% del hero)
     const overlayOpacity = Math.max(0, 1 - p / 0.45);
     heroOverlay.style.opacity = overlayOpacity;
     heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
-    // El scrim se disuelve cuando el taco ya es protagonista
     heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
   }
 });
@@ -302,7 +327,10 @@ function setupEntrances() {
     const cfg = ENTRANCES[el.dataset.animation];
     if (!cfg) return;
     const children = el.querySelectorAll(
-      ".section-label, .section-heading, .section-script, .section-body, .menu-tabs, .menu-tagline, .menu-grid, .menu-note, .nosotros-card, .stat, .momentos-grid > *, .momentos-cta, .salsa-chip, .salsas-note, .ubicacion-ctas, .ubicacion-horario, .pedido-panel, .meme-frame img"
+      ":scope > .section-label, :scope > .section-heading, :scope > .section-script, :scope > .section-body, " +
+      ".menu-block-head, :scope > .menu-tabs, :scope > .menu-tagline, :scope > .menu-grid, :scope > .menu-note, " +
+      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-card, " +
+      ":scope > .ubicacion-ctas, :scope > .ubicacion-horario, :scope > .pedido-panel, .meme-frame img"
     );
     const targets = children.length ? children : [el];
     // Tween desacoplado del trigger: ScrollTrigger.refresh() (p. ej. al cambiar
@@ -324,113 +352,108 @@ function setupEntrances() {
   });
 }
 
-/* ── CONTADORES ─────────────────────────────── */
-function setupCounters() {
-  document.querySelectorAll(".stat-number").forEach((el) => {
-    const target = parseFloat(el.dataset.value);
-    const decimals = parseInt(el.dataset.decimals || "0", 10);
-    const proxy = { val: 0 };
-    gsap.fromTo(proxy, { val: 0 }, {
-      val: target,
-      duration: 2,
-      ease: "power2.out",
-      onUpdate() {
-        el.textContent = decimals > 0 ? proxy.val.toFixed(decimals) : Math.round(proxy.val);
-      },
-      onComplete() {
-        el.textContent = decimals > 0 ? target.toFixed(decimals) : target;
-      },
-      scrollTrigger: {
-        trigger: el.closest(".stats-grid"),
-        start: "top 80%",
-        toggleActions: "play none none reset"
-      }
-    });
-  });
-}
-
-/* ── MENÚ INTERACTIVO ───────────────────────── */
-const tabsEl = document.getElementById("menu-tabs");
-const gridEl = document.getElementById("menu-grid");
-const taglineEl = document.getElementById("menu-tagline");
-const noteEl = document.getElementById("menu-note");
-let activeCat = MENU[0].id;
-
+/* ── MENÚ INTERACTIVO (Cocina + Barra) ──────── */
 function itemId(catId, name) {
   return catId + "::" + name;
 }
 
-function renderTabs() {
-  tabsEl.innerHTML = "";
-  MENU.forEach((cat) => {
-    const btn = document.createElement("button");
-    btn.className = "menu-tab" + (cat.id === activeCat ? " active" : "");
-    btn.type = "button";
-    btn.role = "tab";
-    btn.textContent = cat.tab;
-    btn.addEventListener("click", () => {
-      if (cat.id === activeCat) return;
-      activeCat = cat.id;
-      renderTabs();
-      renderGrid(true);
+function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
+  const tabsEl = document.getElementById(tabsId);
+  const taglineEl = document.getElementById(taglineId);
+  const gridEl = document.getElementById(gridId);
+  const noteEl = document.getElementById(noteId);
+  let active = cats[0].id;
+
+  function renderTabs() {
+    tabsEl.innerHTML = "";
+    cats.forEach((cat) => {
+      const btn = document.createElement("button");
+      btn.className = "menu-tab" + (cat.id === active ? " active" : "");
+      btn.type = "button";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", cat.id === active);
+      btn.textContent = cat.tab;
+      btn.addEventListener("click", () => {
+        if (cat.id === active) return;
+        active = cat.id;
+        renderTabs();
+        renderGrid(true);
+      });
+      tabsEl.appendChild(btn);
     });
-    tabsEl.appendChild(btn);
-  });
-}
-
-function renderGrid(animate) {
-  const cat = MENU.find((c) => c.id === activeCat);
-  taglineEl.textContent = cat.tagline;
-  noteEl.textContent = cat.note || "";
-  gridEl.innerHTML = "";
-
-  if (cat.tile) {
-    const tile = document.createElement("figure");
-    tile.className = "menu-tile";
-    tile.innerHTML = `<img src="${cat.tile.img}" alt="${cat.tile.alt}" loading="lazy"><figcaption>${cat.tile.caption}</figcaption>`;
-    gridEl.appendChild(tile);
   }
 
-  cat.groups.forEach((group) => {
-    if (group.title) {
-      const h = document.createElement("h3");
-      h.className = "menu-group-title";
-      h.textContent = group.title;
-      gridEl.appendChild(h);
-    }
-    group.items.forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "menu-card" + (item.featured ? " featured" : "");
-      card.innerHTML = `
-        ${item.img ? `<img class="menu-card-img" src="${item.img}" alt="${item.n}" loading="lazy">` : ""}
+  function foodCard(cat, item) {
+    const card = document.createElement("article");
+    card.className = "menu-card" + (item.featured ? " featured" : "");
+    card.innerHTML = `
+      <img class="menu-card-thumb" src="${item.img}" alt="${item.n}" loading="lazy">
+      <div class="menu-card-body">
         <div class="menu-card-top">
           <h4 class="menu-card-name">${item.n}</h4>
-          <span class="menu-card-dots"></span>
           <span class="menu-card-price">${fmt(item.p)}</span>
         </div>
         ${item.d ? `<p class="menu-card-desc">${item.d}</p>` : ""}
-        <button class="menu-card-add" type="button" aria-label="Agregar ${item.n} al pedido">+</button>`;
-      card.querySelector(".menu-card-add").addEventListener("click", (e) => {
-        addToCart(cat.id, item);
-        e.currentTarget.classList.remove("added");
-        void e.currentTarget.offsetWidth; // reinicia la animación
-        e.currentTarget.classList.add("added");
-      });
-      gridEl.appendChild(card);
-    });
-  });
-
-  if (animate) {
-    gsap.fromTo([taglineEl, ...gridEl.children],
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, stagger: 0.05, duration: 0.6, ease: "power3.out", overwrite: true }
-    );
-    ScrollTrigger.refresh();
+        <button class="menu-card-add" type="button" aria-label="Agregar ${item.n} al pedido">+</button>
+      </div>`;
+    wireAdd(card, cat, item);
+    return card;
   }
+
+  function licorCard(cat, item) {
+    const card = document.createElement("article");
+    card.className = "licor-card" + (item.featured ? " featured" : "");
+    card.innerHTML = `
+      <div class="licor-media">
+        ${item.img
+          ? `<img src="${item.img}" alt="${item.n}" loading="lazy">`
+          : `<span class="licor-monogram">✿</span>`}
+      </div>
+      <div class="licor-info">
+        <span class="licor-tag">${item.type} · ${item.tag}</span>
+        <h4 class="licor-name">${item.n}</h4>
+        <div class="licor-bottom">
+          <span class="licor-price">${fmt(item.p)}</span>
+          <button class="menu-card-add" type="button" aria-label="Agregar ${item.n} al pedido">+</button>
+        </div>
+      </div>`;
+    wireAdd(card, cat, item);
+    return card;
+  }
+
+  function wireAdd(card, cat, item) {
+    card.querySelector(".menu-card-add").addEventListener("click", (e) => {
+      addToCart(cat.id, item);
+      e.currentTarget.classList.remove("added");
+      void e.currentTarget.offsetWidth;
+      e.currentTarget.classList.add("added");
+    });
+  }
+
+  function renderGrid(animate) {
+    const cat = cats.find((c) => c.id === active);
+    taglineEl.textContent = cat.tagline;
+    if (noteEl) noteEl.textContent = cat.note || "";
+    gridEl.innerHTML = "";
+    gridEl.classList.toggle("licores-grid", !!cat.premium);
+    cat.items.forEach((item) => {
+      gridEl.appendChild(cat.premium ? licorCard(cat, item) : foodCard(cat, item));
+    });
+    if (animate) {
+      gsap.fromTo([taglineEl, ...gridEl.children],
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, stagger: 0.05, duration: 0.6, ease: "power3.out", overwrite: true }
+      );
+      ScrollTrigger.refresh();
+    }
+  }
+
+  renderTabs();
+  renderGrid(false);
 }
 
 /* ── CARRITO → WHATSAPP ─────────────────────── */
-const cart = new Map(); // id → { name, price, qty }  (solo memoria de sesión, sin localStorage)
+const cart = new Map(); // id → { name, price, qty, img } (solo memoria de sesión)
 const cartPill = document.getElementById("cart-pill");
 const cartPillCount = document.getElementById("cart-pill-count");
 const cartPillTotal = document.getElementById("cart-pill-total");
@@ -438,13 +461,16 @@ const cartEmpty = document.getElementById("cart-empty");
 const cartFull = document.getElementById("cart-full");
 const cartList = document.getElementById("cart-list");
 const cartTotalEl = document.getElementById("cart-total");
+const cartCountBadge = document.getElementById("cart-count-badge");
 
 function addToCart(catId, item) {
   const id = itemId(catId, item.n);
-  const entry = cart.get(id) || { name: item.n, price: item.p, qty: 0 };
+  const entry = cart.get(id) || { name: item.n, price: item.p, qty: 0, img: item.img };
   entry.qty++;
   cart.set(id, entry);
-  updateCartUI();
+  updateCartUI(id);
+  // El botón flotante rebota al agregar
+  gsap.fromTo(cartPill, { scale: 1 }, { scale: 1.12, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", overwrite: true, transformOrigin: "50% 50%" });
 }
 
 function changeQty(id, delta) {
@@ -452,7 +478,7 @@ function changeQty(id, delta) {
   if (!entry) return;
   entry.qty += delta;
   if (entry.qty <= 0) cart.delete(id);
-  updateCartUI();
+  updateCartUI(id);
 }
 
 function cartTotals() {
@@ -461,18 +487,21 @@ function cartTotals() {
   return { count, total };
 }
 
-function updateCartUI() {
+function updateCartUI(changedId) {
   const { count, total } = cartTotals();
   cartPill.hidden = count === 0;
   cartPillCount.textContent = count;
   cartPillTotal.textContent = fmt(total);
+  if (cartCountBadge) cartCountBadge.textContent = count === 1 ? "1 ítem" : `${count} ítems`;
   cartEmpty.hidden = count > 0;
   cartFull.hidden = count === 0;
   cartList.innerHTML = "";
   cart.forEach((entry, id) => {
     const li = document.createElement("li");
     li.className = "cart-item";
+    li.dataset.id = id;
     li.innerHTML = `
+      ${entry.img ? `<img class="cart-item-img" src="${entry.img}" alt="" loading="lazy">` : `<span class="cart-item-img cart-item-img-empty">✿</span>`}
       <span class="cart-item-name">${entry.name}<small>${fmt(entry.price)} c/u</small></span>
       <span class="cart-qty">
         <button type="button" aria-label="Quitar uno">−</button>
@@ -486,6 +515,14 @@ function updateCartUI() {
     cartList.appendChild(li);
   });
   cartTotalEl.textContent = fmt(total);
+  // Resalta la fila tocada y pulsa el total
+  if (changedId) {
+    const row = cartList.querySelector(`[data-id="${CSS.escape(changedId)}"]`);
+    if (row) {
+      gsap.fromTo(row, { backgroundColor: "rgba(201,162,39,0.16)", x: -6 }, { backgroundColor: "rgba(201,162,39,0)", x: 0, duration: 0.8, ease: "power2.out" });
+    }
+    gsap.fromTo(cartTotalEl, { scale: 1.15 }, { scale: 1, duration: 0.4, ease: "back.out(2)", transformOrigin: "right center" });
+  }
 }
 
 cartPill.addEventListener("click", () => {
@@ -498,27 +535,34 @@ document.getElementById("cart-send").addEventListener("click", () => {
   const itemsFormateados = [...cart.values()]
     .map((e) => `• ${e.qty}x ${e.name} — ${fmt(e.qty * e.price)}`)
     .join("\n");
-  const mensaje = `¡Hola Gran Patrón! 🌮 Quiero pedir:\n${itemsFormateados}\n\nTotal: $${total.toLocaleString("es-CO")}\n\n¿Para recoger o domicilio?`;
+  const mensaje = `¡Hola Gran Patrón! 🌮 Quiero pedir a domicilio:\n${itemsFormateados}\n\nTotal: $${total.toLocaleString("es-CO")}\n\n📍 Mi dirección: `;
   const url = `https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(mensaje)}`;
   window.open(url, "_blank");
 });
 
 /* ── SALSAS ─────────────────────────────────── */
 function renderSalsas() {
-  const row = document.getElementById("salsas-row");
+  const grid = document.getElementById("salsas-grid");
   SALSAS.forEach((s) => {
-    const chip = document.createElement("div");
-    chip.className = "salsa-chip";
+    const card = document.createElement("div");
+    card.className = "salsa-card";
     const heat = Array.from({ length: 4 }, (_, i) =>
-      `<span class="${i < s.h ? "on" : "off"}">🌶</span>`).join("");
-    chip.innerHTML = `<span class="salsa-name">${s.n}</span><span class="salsa-heat">${heat}</span>`;
-    row.appendChild(chip);
+      `<span class="${i < s.h ? "chile-on" : "chile-off"}">${CHILE_SVG}</span>`).join("");
+    card.innerHTML = `
+      <div class="salsa-card-top">
+        <h4 class="salsa-name">${s.n}</h4>
+        <span class="salsa-level h${s.h}">${s.label}</span>
+      </div>
+      <p class="salsa-flavor">${s.f}</p>
+      <div class="salsa-heat">${heat}</div>`;
+    grid.appendChild(card);
   });
 }
 
-/* ── VIDEO AMBIENTE (play solo en viewport) ──── */
-function setupAmbienteVideo() {
-  const video = document.getElementById("ambiente-video");
+/* ── REEL DE INSTAGRAM (play solo en viewport) ─ */
+function setupReel() {
+  const video = document.getElementById("ig-reel-video");
+  if (!video) return;
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) video.play().catch(() => {});
@@ -531,11 +575,10 @@ function setupAmbienteVideo() {
 /* ── INIT ───────────────────────────────────── */
 window.addEventListener("resize", resizeCanvas);
 
-renderTabs();
-renderGrid(false);
+initMenuBlock(MENU_COCINA, "tabs-cocina", "tagline-cocina", "grid-cocina", "note-cocina");
+initMenuBlock(MENU_BARRA, "tabs-barra", "tagline-barra", "grid-barra", "note-barra");
 renderSalsas();
 setupEntrances();
-setupCounters();
-setupAmbienteVideo();
+setupReel();
 preloadFrames();
 ScrollTrigger.refresh();
