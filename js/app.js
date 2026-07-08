@@ -189,9 +189,11 @@ window.lenis = lenis;
 
 /* ── CANVAS DEL HERO ────────────────────────── */
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// desynchronized: reduce la latencia entre el dibujo y la pantalla (menos jank).
+const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
 const frames = new Array(FRAME_COUNT).fill(null);
-let currentFrame = 0;         // último frame entero dibujado
+let currentFrame = 0;         // último frame entero solicitado
+let lastDrawnFrame = -1;      // último frame REALMENTE pintado (debounce estricto)
 let scrollTarget = 0;         // frame exacto que pide el scroll (float)
 let renderedFrame = 0;        // frame interpolado que persigue a scrollTarget
 let rafLoopActive = false;
@@ -202,10 +204,17 @@ let heroVisualsDirty = false; // pinta overlay/scrim dentro del rAF
 const LERP_FACTOR = 0.1;      // suavizado del scroll (menor = más suave)
 const LERP_EPSILON = 0.01;    // umbral para considerar el lerp "asentado"
 
+/* Solo reasigna width/height del canvas cuando cambian de verdad. Escribir
+   canvas.width/height (aunque sea el mismo valor) limpia el buffer e invalida
+   el caché de textura de la GPU, así que lo evitamos fuera de los resizes reales. */
 function resizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(canvas.clientWidth * dpr);
-  canvas.height = Math.round(canvas.clientHeight * dpr);
+  const w = Math.round(canvas.clientWidth * dpr);
+  const h = Math.round(canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
   drawFrame(currentFrame);
 }
 
@@ -243,6 +252,7 @@ function drawFrame(index) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, cw, ch);
   ctx.drawImage(img, dx, dy, dw, dh);
+  lastDrawnFrame = index;
 }
 
 function scheduleFrameDraw() {
@@ -263,9 +273,12 @@ function frameLoop() {
     renderedFrame += diff * LERP_FACTOR;
   }
   const idx = Math.round(renderedFrame);
-  if (idx !== currentFrame) {
-    currentFrame = idx;
-    drawFrame(currentFrame);
+  currentFrame = idx;
+  // Debounce estricto: solo dibujamos si el frame entero cambió respecto al
+  // último pintado. Un scroll que no cruza un frame nuevo NO redibuja nada.
+  // (drawFrame actualiza lastDrawnFrame internamente.)
+  if (idx !== lastDrawnFrame) {
+    drawFrame(idx);
   }
   if (heroVisualsDirty) {
     const p = heroProgress;
