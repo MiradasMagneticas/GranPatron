@@ -8,14 +8,15 @@
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 113;
-const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(4, "0")}.webp`;
-const PRELOAD_FIRST = 10;   // frames antes de ocultar el loader
+const FRAME_COUNT = 59;
+const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
+const PRELOAD_FIRST = 8;    // frames antes de ocultar el loader
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
-const FRAME_SPEED = 1.8;    // el taco termina de abrirse antes en el scroll del hero
-const START_FRAME = 18;     // salta frames iniciales para acelerar el arranque
+const FRAME_SPEED = 2.0;    // el taco termina de abrirse antes en el scroll del hero
+const START_FRAME = 0;
 const WA_NUMERO = "573143564723";
 const IMG = (slug) => `assets/img/menu/${slug}.webp`;
+const LICOR_IMG = (slug) => `assets/img/menu/${slug}.png`;
 
 const fmt = (n) => "$" + n.toLocaleString("es-CO");
 
@@ -126,17 +127,17 @@ const MENU_BARRA = [
   {
     id: "licores", tab: "Licores", tagline: "La reserva del patrón", premium: true,
     items: [
-      { n: "½ Aguardiente Amarillo", p: 75000, img: IMG("aguardiente-amarillo-media"), tag: "Media botella", type: "Aguardiente" },
-      { n: "½ Aguardiente Ant. Azul", p: 75000, img: IMG("aguardiente-antioqueno-media"), tag: "Media botella", type: "Aguardiente" },
-      { n: "Aguardiente Néctar Verde", p: 110000, img: IMG("nectar-verde"), tag: "Botella", type: "Aguardiente" },
-      { n: "Aguardiente Ant. Azul", p: 130000, img: IMG("aguardiente-antioqueno"), tag: "Botella", type: "Aguardiente" },
-      { n: "Aguardiente Amarillo", p: 130000, img: IMG("aguardiente-amarillo"), tag: "Botella", type: "Aguardiente" },
-      { n: "Tequila Jimador Blanco", p: 180000, img: IMG("jimador-blanco"), tag: "Botella", type: "Tequila" },
-      { n: "Tequila Jimador Reposado", p: 190000, img: IMG("jimador-reposado"), tag: "Botella", type: "Tequila" },
-      { n: "Tequila Patrón Reposado", p: 450000, img: IMG("patron-reposado"), tag: "Botella", type: "Tequila" },
-      { n: "Don Julio 70 Cristalino", p: 600000, img: IMG("don-julio-70"), tag: "Botella", type: "Tequila" },
-      { n: "Whiskey Buchanans 12 Años", p: 250000, img: IMG("buchanans-12"), tag: "Botella", type: "Whisky" },
-      { n: "Whiskey Buchanans Two S", p: 360000, img: IMG("buchanans-two-souls"), tag: "Botella", type: "Whisky" }
+      { n: "½ Aguardiente Amarillo", p: 75000, img: LICOR_IMG("aguardiente-amarillo-media"), tag: "Media botella", type: "Aguardiente" },
+      { n: "½ Aguardiente Ant. Azul", p: 75000, img: LICOR_IMG("aguardiente-antioqueno-media"), tag: "Media botella", type: "Aguardiente" },
+      { n: "Aguardiente Néctar Verde", p: 110000, img: LICOR_IMG("nectar-verde"), tag: "Botella", type: "Aguardiente" },
+      { n: "Aguardiente Ant. Azul", p: 130000, img: LICOR_IMG("aguardiente-antioqueno"), tag: "Botella", type: "Aguardiente" },
+      { n: "Aguardiente Amarillo", p: 130000, img: LICOR_IMG("aguardiente-amarillo"), tag: "Botella", type: "Aguardiente" },
+      { n: "Tequila Jimador Blanco", p: 180000, img: LICOR_IMG("jimador-blanco"), tag: "Botella", type: "Tequila" },
+      { n: "Tequila Jimador Reposado", p: 190000, img: LICOR_IMG("jimador-reposado"), tag: "Botella", type: "Tequila" },
+      { n: "Tequila Patrón Reposado", p: 450000, img: LICOR_IMG("patron-reposado"), tag: "Botella", type: "Tequila" },
+      { n: "Don Julio 70 Cristalino", p: 600000, img: LICOR_IMG("don-julio-70"), tag: "Botella", type: "Tequila" },
+      { n: "Whiskey Buchanans 12 Años", p: 250000, img: LICOR_IMG("buchanans-12"), tag: "Botella", type: "Whisky" },
+      { n: "Whiskey Buchanans Two S", p: 360000, img: LICOR_IMG("buchanans-two-souls"), tag: "Botella", type: "Whisky" }
     ]
   }
 ];
@@ -169,6 +170,9 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const frames = new Array(FRAME_COUNT).fill(null);
 let currentFrame = 0;
+let targetFrame = 0;
+let frameDirty = false;
+let rafLoopActive = false;
 let bgColor = "#e9e7e4";
 let lastSampledFrame = -99;
 
@@ -215,6 +219,25 @@ function drawFrame(index) {
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
+function scheduleFrameDraw() {
+  if (rafLoopActive) return;
+  rafLoopActive = true;
+  requestAnimationFrame(frameLoop);
+}
+
+function frameLoop() {
+  if (frameDirty && targetFrame !== currentFrame) {
+    currentFrame = targetFrame;
+    drawFrame(currentFrame);
+    frameDirty = false;
+  }
+  if (frameDirty) {
+    requestAnimationFrame(frameLoop);
+  } else {
+    rafLoopActive = false;
+  }
+}
+
 /* ── LOADER (10 primeros frames, resto en bg) ── */
 const loader = document.getElementById("loader");
 const loaderBar = document.getElementById("loader-bar");
@@ -247,7 +270,11 @@ async function preloadFrames() {
       const batch = [];
       for (let j = i; j < Math.min(i + 12, FRAME_COUNT); j++) batch.push(loadFrame(j));
       await Promise.all(batch);
-      if (currentFrame >= i && currentFrame < i + 12) drawFrame(currentFrame);
+      if (currentFrame >= i && currentFrame < i + 12) {
+        targetFrame = currentFrame;
+        frameDirty = true;
+        scheduleFrameDraw();
+      }
     }
   })();
 }
@@ -264,7 +291,6 @@ function revealSite() {
 const heroScroll = document.getElementById("hero-scroll");
 const heroOverlay = document.getElementById("hero-overlay");
 const heroScrim = document.getElementById("hero-scrim");
-const heroSlogan = document.getElementById("hero-slogan");
 
 ScrollTrigger.create({
   trigger: heroScroll,
@@ -276,19 +302,13 @@ ScrollTrigger.create({
     const accelerated = Math.min(p * FRAME_SPEED, 1);
     const playable = FRAME_COUNT - START_FRAME;
     const index = Math.min(START_FRAME + Math.floor(accelerated * playable), FRAME_COUNT - 1);
-    if (index !== currentFrame) {
-      currentFrame = index;
-      requestAnimationFrame(() => drawFrame(currentFrame));
-    }
+    targetFrame = index;
+    frameDirty = true;
+    scheduleFrameDraw();
     const overlayOpacity = Math.max(0, 1 - p / 0.45);
     heroOverlay.style.opacity = overlayOpacity;
     heroOverlay.style.visibility = overlayOpacity <= 0.01 ? "hidden" : "visible";
     heroScrim.style.opacity = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.35);
-    if (heroSlogan) {
-      const sloganOpacity = p > 0.6 ? Math.min(1, (p - 0.6) / 0.25) : 0;
-      heroSlogan.style.opacity = sloganOpacity;
-      heroSlogan.style.visibility = sloganOpacity <= 0.01 ? "hidden" : "visible";
-    }
   }
 });
 
@@ -376,7 +396,9 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
     tabsEl.innerHTML = "";
     cats.forEach((cat) => {
       const btn = document.createElement("button");
-      btn.className = "menu-tab" + (cat.id === active ? " active" : "");
+      btn.className = "menu-tab"
+        + (cat.id === active ? " active" : "")
+        + (cat.premium ? " premium-tab" : "");
       btn.type = "button";
       btn.setAttribute("role", "tab");
       btn.setAttribute("aria-selected", cat.id === active);
