@@ -30,11 +30,11 @@ window.addEventListener("load", () => {
 });
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 59;
+const FRAME_COUNT = 39;
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
-const FRAME_SPEED = 1.0;    // 1:1 con el scroll del hero → frame 59 (slogan) al final
+const FRAME_SPEED = 1.3;    // el frame final (slogan) se alcanza a ~77% del scroll y se sostiene
 const START_FRAME = 0;
 const WA_NUMERO = "573143564723";
 const IMG = (slug) => `assets/img/menu/${slug}.webp`;
