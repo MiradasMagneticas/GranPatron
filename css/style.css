@@ -151,15 +151,12 @@ button { font-family: inherit; cursor: pointer; }
   transform: translate3d(0, 0, 0);
   perspective: 1000px;
   backface-visibility: hidden;
-  /* Fondo de respaldo: el frame inicial del taco vive DETRÁS del canvas.
-     Si en un scroll ultra rápido el canvas tarda un milisegundo en repintar
-     (o su capa GPU parpadea), el ojo ve esta imagen idéntica en vez de un
-     fondo vacío. No se ve en operación normal porque el canvas es opaco. */
+  /* Sin background-image de respaldo: durante un parpadeo a mitad de la
+     animación se veía el taco CERRADO del frame 1 debajo del abierto
+     (el famoso "alma"). El frame locking del JS retiene el último frame
+     pintado en el propio canvas; aquí solo queda un color neutro idéntico
+     al fondo de los frames por si el canvas aún no ha pintado nunca. */
   background-color: #e9e7e4;
-  background-image: url("../assets/frames/frame_001.webp");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 #canvas {
   width: 100%; height: 100%; display: block;
@@ -1268,6 +1265,26 @@ body.loaded .hero-glow { animation-name: softIn2; }
   transition: all 0.3s ease;
 }
 .back-to-top:hover { background: var(--dorado-patron); color: var(--texto-oscuro); border-color: var(--dorado-patron); }
+
+/* ── RED DE SEGURIDAD VISUAL (redes lentas) ─── */
+/* Mientras una imagen baja por datos móviles, su contenedor muestra una
+   base de color acorde a la sección: la página se siente sólida y diseñada
+   desde el primer segundo, sin bloques vacíos. (Estático a propósito:
+   cero costo de batería; la foto opaca lo cubre al llegar.) */
+.menu-card-thumb,
+.cart-item-img,
+.nosotros-card img {
+  background-color: #2A2117; /* madera oscura, a juego con las cards */
+}
+.ig-post,
+.ig-post img,
+.ig-post video,
+.ig-ring img {
+  background-color: #EFE9DC; /* hueso, a juego con la tarjeta clara de IG */
+}
+.footer-banner { background-color: #0E0B08; }
+/* .licor-media ya trae su vitrina degradada clara como base; el mapa
+   (.ubicacion-map) ya tiene panel oscuro propio. */
 
 /* ── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 960px) {

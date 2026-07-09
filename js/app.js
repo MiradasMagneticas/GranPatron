@@ -73,7 +73,12 @@ window.addEventListener("load", () => {
 
 /* ── CONFIG ─────────────────────────────────── */
 const FRAME_COUNT = 37;
-const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp`;
+/* ASSET_V rompe cachés viejos: los frames se han reemplazado manteniendo el
+   mismo nombre de archivo, y un celular con caché antiguo mezclaba secuencias
+   (frames viejos + nuevos = parpadeos y "fantasmas"). Subir la versión
+   obliga a todos los dispositivos a bajar la secuencia vigente. */
+const ASSET_V = "3";
+const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp?v=${ASSET_V}`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
 const FRAME_SPEED = 1.6;    // el slogan se alcanza a ~62% del scroll y queda congelado el resto
@@ -252,8 +257,12 @@ window.lenis = lenis;
 
 /* ── CANVAS DEL HERO ────────────────────────── */
 const canvas = document.getElementById("canvas");
-// desynchronized: reduce la latencia entre el dibujo y la pantalla (menos jank).
-const ctx = canvas ? canvas.getContext("2d", { alpha: false, desynchronized: true }) : null;
+/* alpha:false = canvas 100% opaco (nunca deja ver lo que hay detrás).
+   OJO: quitamos `desynchronized: true` — en varios Android/iPhone esa vía
+   se salta la sincronía vertical del compositor y era la causa real de los
+   parpadeos ("el alma del taco") en scroll ultra rápido. Con el pipeline
+   sincronizado, cada frame pintado queda retenido hasta el siguiente. */
+const ctx = canvas ? canvas.getContext("2d", { alpha: false }) : null;
 const frames = new Array(FRAME_COUNT).fill(null);
 let currentFrame = 0;         // último frame entero solicitado
 let lastDrawnFrame = -1;      // último frame REALMENTE pintado (debounce estricto)
@@ -290,7 +299,13 @@ function resizeCanvas() {
 }
 
 function nearestLoaded(index) {
-  for (let i = index; i >= 0; i--) if (frames[i] && frames[i].complete) return frames[i];
+  // Solo cuentan frames 100% listos (descargados Y decodificados). Si el
+  // pedido aún no está, devolvemos el más cercano hacia atrás; si no hay
+  // ninguno, drawFrame no toca el lienzo y el último pintado queda retenido.
+  for (let i = index; i >= 0; i--) {
+    const f = frames[i];
+    if (f && f.complete && f.naturalWidth > 0) return f;
+  }
   return null;
 }
 
@@ -308,10 +323,17 @@ function sampleBgColor(img) {
   bgColor = `rgb(${Math.round(r / 4)},${Math.round(g / 4)},${Math.round(b / 4)})`;
 }
 
+/* REGLA DE RENDERIZADO (frame locking):
+   - Aquí NO existe ningún clearRect ni borrado preventivo del lienzo.
+   - El repintado es fillRect + drawImage contiguos, en el mismo tick, y
+     SOLO cuando hay un frame completamente cargado y decodificado.
+   - Si el scroll va más rápido que la red/decodificación, salimos sin
+     tocar el canvas: el último frame pintado queda retenido en pantalla
+     y el ojo jamás ve un fondo vacío, blanco o transparente. */
 function drawFrame(index) {
   if (!ctx) return;
   const img = nearestLoaded(index);
-  if (!img) return;
+  if (!img) return; // lienzo retenido: se conserva el último frame sólido
   if (Math.abs(index - lastSampledFrame) >= 20) {
     sampleBgColor(img);
     lastSampledFrame = index;
@@ -386,7 +408,14 @@ let siteRevealed = false;
 function loadFrame(i) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => { frames[i] = img; resolve(img); };
+    img.onload = () => {
+      // FRAME LOCKING: el frame solo entra al array cuando está DECODIFICADO
+      // en RAM (no solo descargado). Así drawImage nunca espera un decode a
+      // mitad de scroll ni pinta un bitmap a medias.
+      const ready = () => { frames[i] = img; resolve(img); };
+      if (img.decode) img.decode().then(ready, ready);
+      else ready();
+    };
     img.onerror = () => resolve(null);
     img.src = FRAME_PATH(i);
   });
@@ -422,6 +451,39 @@ async function preloadFrames() {
   }
   await Promise.all(workers);
   revealSite();
+  // Los frames ya están en RAM: ahora la red queda libre para calentar
+  // en caché las botellas premium y las decoraciones estructurales.
+  safe("precarga botellas y decoración", preloadCriticalImages);
+}
+
+/* BALANCEO DE RED: los 37 frames del taco tienen la prioridad inicial,
+   pero apenas terminan forzamos la descarga (prioridad alta) de las
+   botellas de licores y las imágenes estructurales. Así, en datos móviles
+   lentos, cuando el usuario llega a La Barra las botellas ya están en
+   caché en vez de quedar relegadas por el navegador. */
+function preloadCriticalImages() {
+  const urls = [];
+  MENU_BARRA.forEach((cat) => {
+    if (cat.premium) cat.items.forEach((it) => { if (it.img) urls.push(it.img); });
+  });
+  urls.push(
+    "assets/img/meme-amor.jpg",
+    "assets/img/logo-banner.png",
+    "assets/img/nosotros-patio.webp",
+    "assets/img/ubicacion-patio.jpg"
+  );
+  let next = 0;
+  function worker() {
+    if (next >= urls.length) return;
+    const img = new Image();
+    if ("fetchPriority" in img) img.fetchPriority = "high";
+    img.onload = worker;
+    img.onerror = worker;
+    img.src = urls[next++];
+  }
+  // 4 descargas en paralelo: suficiente para avanzar rápido sin ahogar
+  // la red del celular mientras el usuario ya navega la página.
+  for (let i = 0; i < 4; i++) worker();
 }
 
 function revealFirstFrame() {
@@ -655,7 +717,7 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
     card.innerHTML = `
       <div class="licor-media">
         ${item.img
-          ? `<img src="${item.img}" alt="${item.n}" loading="lazy">`
+          ? `<img src="${item.img}" alt="${item.n}" loading="eager" fetchpriority="high" decoding="async">`
           : `<span class="licor-monogram">✿</span>`}
       </div>
       <div class="licor-info">
