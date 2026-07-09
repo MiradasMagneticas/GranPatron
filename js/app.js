@@ -72,12 +72,12 @@ window.addEventListener("load", () => {
 });
 
 /* ── CONFIG ─────────────────────────────────── */
-const FRAME_COUNT = 19;
+const FRAME_COUNT = 27;
 /* ASSET_V rompe cachés viejos: los frames se han reemplazado manteniendo el
    mismo nombre de archivo, y un celular con caché antiguo mezclaba secuencias
    (frames viejos + nuevos = parpadeos y "fantasmas"). Subir la versión
    obliga a todos los dispositivos a bajar la secuencia vigente. */
-const ASSET_V = "4";
+const ASSET_V = "5";
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp?v=${ASSET_V}`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
