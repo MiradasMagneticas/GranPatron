@@ -77,7 +77,7 @@ const FRAME_COUNT = 27;
    mismo nombre de archivo, y un celular con caché antiguo mezclaba secuencias
    (frames viejos + nuevos = parpadeos y "fantasmas"). Subir la versión
    obliga a todos los dispositivos a bajar la secuencia vigente. */
-const ASSET_V = "5";
+const ASSET_V = "6";
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp?v=${ASSET_V}`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
@@ -264,13 +264,15 @@ const canvas = document.getElementById("canvas");
    sincronizado, cada frame pintado queda retenido hasta el siguiente. */
 const ctx = canvas ? canvas.getContext("2d", { alpha: false }) : null;
 const frames = new Array(FRAME_COUNT).fill(null);
+// Color de fondo pre-calculado por frame (una sola vez, al precargar). Evita
+// getImageData() durante el scroll — ese readback GPU→CPU era el causante de
+// micro-tirones en gama media/baja. En el hot path solo leemos de este array.
+const bgColors = new Array(FRAME_COUNT).fill(null);
 let currentFrame = 0;         // último frame entero solicitado
 let lastDrawnFrame = -1;      // último frame REALMENTE pintado (debounce estricto)
 let scrollTarget = 0;         // frame exacto que pide el scroll (float)
 let renderedFrame = 0;        // frame interpolado que persigue a scrollTarget
 let rafLoopActive = false;
-let bgColor = "#e9e7e4";
-let lastSampledFrame = -99;
 let heroProgress = 0;         // progreso de scroll del hero (0..1)
 let heroVisualsDirty = false; // pinta overlay/scrim dentro del rAF
 let lastSloganOpacity = -1;   // cache para no tocar el DOM si no cambió
@@ -280,6 +282,23 @@ const LERP_EPSILON = 0.01;    // umbral para considerar el lerp "asentado"
 // (con FRAME_SPEED 1.6 los frames terminan en p = 1/1.6 ≈ 0.625).
 const SLOGAN_IN_START = 0.56;
 const SLOGAN_IN_END = 0.66;
+
+/* Geometría de dibujo cacheada: como los 27 frames comparten tamaño (1280×720)
+   y el canvas no cambia entre scrolls, el rectángulo destino (dw,dh,dx,dy) es
+   idéntico en cada frame. Lo calculamos una vez por resize en vez de 60 veces
+   por segundo durante el scroll. */
+let drawRect = null;               // { dw, dh, dx, dy }
+let geomKey = "";                  // firma cw|ch|iw|ih para invalidar el caché
+
+/* Asignar canvas.width/height RESETEA todo el estado del contexto (smoothing,
+   fillStyle, etc.). Centralizamos aquí la config para re-aplicarla tras cada
+   resize. imageSmoothingQuality "low" = downscale más barato (imperceptible a
+   este tamaño) → menos trabajo de GPU por frame en gama baja. */
+function configureContext() {
+  if (!ctx) return;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "low";
+}
 
 /* Solo reasigna width/height del canvas cuando cambian de verdad. Escribir
    canvas.width/height (aunque sea el mismo valor) limpia el buffer e invalida
@@ -294,58 +313,71 @@ function resizeCanvas() {
   if (canvas.width !== w || canvas.height !== h) {
     canvas.width = w;
     canvas.height = h;
+    geomKey = "";            // el tamaño cambió: recalcular geometría al pintar
   }
+  configureContext();        // el reset del buffer borró el estado; re-aplicar
   drawFrame(currentFrame);
 }
 
-function nearestLoaded(index) {
+function nearestLoadedIndex(index) {
   // Solo cuentan frames 100% listos (descargados Y decodificados). Si el
   // pedido aún no está, devolvemos el más cercano hacia atrás; si no hay
-  // ninguno, drawFrame no toca el lienzo y el último pintado queda retenido.
+  // ninguno (-1), drawFrame no toca el lienzo y el último pintado queda retenido.
   for (let i = index; i >= 0; i--) {
     const f = frames[i];
-    if (f && f.complete && f.naturalWidth > 0) return f;
+    if (f && f.complete && f.naturalWidth > 0) return i;
   }
-  return null;
+  return -1;
 }
 
-function sampleBgColor(img) {
-  const off = document.createElement("canvas");
-  off.width = 10; off.height = 10;
-  const octx = off.getContext("2d");
-  octx.drawImage(img, 0, 0, 10, 10);
-  const corners = [[0, 0], [9, 0], [0, 9], [9, 9]];
-  let r = 0, g = 0, b = 0;
-  corners.forEach(([x, y]) => {
-    const d = octx.getImageData(x, y, 1, 1).data;
-    r += d[0]; g += d[1]; b += d[2];
-  });
-  bgColor = `rgb(${Math.round(r / 4)},${Math.round(g / 4)},${Math.round(b / 4)})`;
+/* Muestrea el color de las 4 esquinas de una imagen ya decodicada. Se llama
+   UNA vez por frame durante la precarga (fuera del scroll), nunca en el hot
+   path — por eso el getImageData aquí no cuesta nada visible. */
+function sampleBgColorFrom(img) {
+  try {
+    const off = document.createElement("canvas");
+    off.width = 10; off.height = 10;
+    const octx = off.getContext("2d");
+    octx.drawImage(img, 0, 0, 10, 10);
+    const corners = [[0, 0], [9, 0], [0, 9], [9, 9]];
+    let r = 0, g = 0, b = 0;
+    corners.forEach(([x, y]) => {
+      const d = octx.getImageData(x, y, 1, 1).data;
+      r += d[0]; g += d[1]; b += d[2];
+    });
+    return `rgb(${Math.round(r / 4)},${Math.round(g / 4)},${Math.round(b / 4)})`;
+  } catch (e) {
+    return "#e9e7e4"; // fallback neutro si el canvas se ensucia (CORS, etc.)
+  }
 }
 
-/* REGLA DE RENDERIZADO (frame locking):
+/* REGLA DE RENDERIZADO (frame locking — escudo visual absoluto):
    - Aquí NO existe ningún clearRect ni borrado preventivo del lienzo.
    - El repintado es fillRect + drawImage contiguos, en el mismo tick, y
      SOLO cuando hay un frame completamente cargado y decodificado.
    - Si el scroll va más rápido que la red/decodificación, salimos sin
      tocar el canvas: el último frame pintado queda retenido en pantalla
-     y el ojo jamás ve un fondo vacío, blanco o transparente. */
+     y el ojo jamás ve un fondo vacío, blanco o transparente.
+   - Cero getImageData en el hot path: el color de fondo ya viene pre-calculado
+     en bgColors[]; la geometría de dibujo viene cacheada en drawRect. */
 function drawFrame(index) {
   if (!ctx) return;
-  const img = nearestLoaded(index);
-  if (!img) return; // lienzo retenido: se conserva el último frame sólido
-  if (Math.abs(index - lastSampledFrame) >= 20) {
-    sampleBgColor(img);
-    lastSampledFrame = index;
-  }
+  const useIndex = nearestLoadedIndex(index);
+  if (useIndex < 0) return; // lienzo retenido: se conserva el último frame sólido
+  const img = frames[useIndex];
   const cw = canvas.width, ch = canvas.height;
   const iw = img.naturalWidth, ih = img.naturalHeight;
-  const scale = Math.max(cw / iw, ch / ih) * IMAGE_SCALE;
-  const dw = iw * scale, dh = ih * scale;
-  const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
-  ctx.fillStyle = bgColor;
+  // Recalcula la geometría solo si cambió el tamaño de canvas o de imagen.
+  const key = cw + "|" + ch + "|" + iw + "|" + ih;
+  if (key !== geomKey) {
+    const scale = Math.max(cw / iw, ch / ih) * IMAGE_SCALE;
+    const dw = iw * scale, dh = ih * scale;
+    drawRect = { dw, dh, dx: (cw - dw) / 2, dy: (ch - dh) / 2 };
+    geomKey = key;
+  }
+  ctx.fillStyle = bgColors[useIndex] || "#e9e7e4";
   ctx.fillRect(0, 0, cw, ch);
-  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.drawImage(img, drawRect.dx, drawRect.dy, drawRect.dw, drawRect.dh);
   lastDrawnFrame = index;
 }
 
@@ -412,7 +444,12 @@ function loadFrame(i) {
       // FRAME LOCKING: el frame solo entra al array cuando está DECODIFICADO
       // en RAM (no solo descargado). Así drawImage nunca espera un decode a
       // mitad de scroll ni pinta un bitmap a medias.
-      const ready = () => { frames[i] = img; resolve(img); };
+      const ready = () => {
+        // Pre-cálculo del color de fondo AQUÍ (fuera del hot path del scroll).
+        bgColors[i] = sampleBgColorFrom(img);
+        frames[i] = img;   // publicar al array como último paso: ya está listo
+        resolve(img);
+      };
       if (img.decode) img.decode().then(ready, ready);
       else ready();
     };
@@ -456,7 +493,7 @@ async function preloadFrames() {
   safe("precarga botellas y decoración", preloadCriticalImages);
 }
 
-/* BALANCEO DE RED: los 37 frames del taco tienen la prioridad inicial,
+/* BALANCEO DE RED: los frames del taco tienen la prioridad inicial,
    pero apenas terminan forzamos la descarga (prioridad alta) de las
    botellas de licores y las imágenes estructurales. Así, en datos móviles
    lentos, cuando el usuario llega a La Barra las botellas ya están en
