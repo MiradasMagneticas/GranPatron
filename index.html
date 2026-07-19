@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Gran Patrón Taquería — Los Patrones del Taco · Cota, Cundinamarca</title>
   <meta name="description" content="Gran Patrón Taquería en Cota, Cundinamarca. Tacos de birria, pastor, carnitas y más. Cocina mexicana auténtica con sabor festivo colombiano. Pide a domicilio por WhatsApp.">
   <link rel="icon" type="image/jpeg" href="assets/img/logo-main.jpg">
@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <!-- Primer frame del hero con máxima prioridad: primer pintado instantáneo -->
-  <link rel="preload" as="image" href="assets/frames/frame_001.webp?v=6" fetchpriority="high">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <link rel="preload" as="image" href="assets/frames/frame_001.webp?v=7" fetchpriority="high">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&family=Work+Sans:wght@300;400;500;600&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 
@@ -79,33 +79,56 @@
         <p class="section-script">de los patrones</p>
       </div>
 
-      <!-- LA COCINA -->
-      <div class="menu-block menu-cocina" data-animation="fade-up">
-        <div class="menu-block-head">
-          <span class="menu-block-icon" aria-hidden="true">🌮</span>
-          <h3 class="menu-block-title">La Cocina</h3>
-          <p class="menu-block-sub">Antojitos, tacos y las joyas de la casa</p>
-        </div>
-        <div class="menu-tabs" id="tabs-cocina" role="tablist" aria-label="Categorías de comida"></div>
-        <p class="menu-tagline" id="tagline-cocina"></p>
-        <div class="menu-grid" id="grid-cocina"></div>
-        <p class="menu-note" id="note-cocina"></p>
-      </div>
+      <!-- Mensaje de incentivo: una línea, directo -->
+      <p class="menu-incentivo" data-animation="fade-up">Arma tu pedido aquí mismo y te llega caliente a la puerta 🛵</p>
 
-      <div class="menu-divider" aria-hidden="true"><span>✦ &nbsp;✦&nbsp; ✦</span></div>
-
-      <!-- LA BARRA -->
-      <div class="menu-block menu-barra" data-animation="scale-up">
-        <div class="menu-block-head">
-          <span class="menu-block-icon" aria-hidden="true">🍹</span>
-          <h3 class="menu-block-title">La Barra</h3>
-          <p class="menu-block-sub">Aguas frescas, cervezas, cócteles y tequila</p>
-        </div>
-        <div class="menu-tabs" id="tabs-barra" role="tablist" aria-label="Categorías de bebidas"></div>
-        <p class="menu-tagline" id="tagline-barra"></p>
-        <div class="menu-grid" id="grid-barra"></div>
-        <p class="menu-note" id="note-barra"></p>
+      <!-- Filtros unificados: carrusel horizontal con scroll-snap.
+           Licores es filtro principal, al mismo nivel que el resto. -->
+      <div class="menu-block" data-animation="fade-up">
+        <div class="menu-tabs" id="tabs-menu" role="tablist" aria-label="Categorías del menú"></div>
+        <p class="menu-tagline" id="tagline-menu"></p>
+        <div class="menu-grid" id="grid-menu"></div>
+        <p class="menu-note" id="note-menu"></p>
       </div>
+    </section>
+
+    <!-- 6. PEDIDO POR WHATSAPP (subido: a un scroll del menú) -->
+    <section class="section section-pedido" id="pedido" data-animation="blur-up" data-persist="true">
+      <div class="section-head">
+        <span class="section-label">02 · Tu Pedido</span>
+        <h2 class="section-heading">Arma tu pedido</h2>
+        <p class="section-script">y te lo llevamos a domicilio 🛵</p>
+      </div>
+      <div class="pedido-panel">
+        <div id="cart-empty" class="cart-empty">
+          <p>Tu pedido está vacío. El menú está aquí arriba, esperándote. 👆</p>
+          <a class="btn btn-outline" href="#menu" data-scroll="#menu">Volver al menú</a>
+        </div>
+        <div id="cart-full" class="cart-full" hidden>
+          <div class="cart-head">
+            <span class="cart-head-title">Tu pedido</span>
+            <span class="cart-badge" id="cart-count-badge">0 ítems</span>
+          </div>
+          <ul class="cart-list" id="cart-list"></ul>
+          <div class="cart-total-row"><span>Total</span><strong id="cart-total">$0</strong></div>
+          <p class="cart-note">Tu pedido va a domicilio 🛵 — la dirección, proteína y salsas los confirmas en el chat.</p>
+          <button class="btn btn-gold btn-send" id="cart-send" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.1-4.7-4-4.9-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5s.8 1.9.8 2c.1.1.1.3 0 .5l-.4.6c-.1.2-.3.4-.1.7.2.3.8 1.3 1.7 2.1 1.2 1.1 2.2 1.4 2.5 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4 0 .1 0 .7-.1 1.3Z"/></svg>
+            Enviar pedido por WhatsApp
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. SALSAS (compactas) -->
+    <section class="section section-salsas" id="salsas">
+      <div class="section-head" data-animation="fade-up">
+        <span class="section-label">03 · Picor</span>
+        <h2 class="section-heading">Las salsas de la casa</h2>
+        <p class="section-script">elige tu nivel de valentía</p>
+      </div>
+      <div class="salsas-grid" id="salsas-grid" data-animation="stagger-up"></div>
+      <p class="salsas-note" data-animation="fade-up">Todas acompañan tus tacos sin costo. La Fantasma no perdona: avisado quedas.</p>
     </section>
 
     <!-- 6. NOSOTROS -->
@@ -116,7 +139,7 @@
       </div>
       <div class="nosotros-inner">
         <div class="nosotros-copy" data-animation="clip-reveal">
-          <span class="section-label">02 · Nosotros</span>
+          <span class="section-label">04 · Nosotros</span>
           <h2 class="section-heading">Un pedacito de México<br>en la sabana</h2>
         </div>
       </div>
@@ -130,7 +153,19 @@
       <p class="meme-caption">— filosofía oficial de la casa</p>
     </section>
 
-    <!-- 8. MOMENTOS / FEED DE INSTAGRAM -->
+    <!-- 8. MOMENTO DE MARCA — The World Is Yours (100% tipográfico) -->
+    <section class="section section-twiy" aria-label="The world is yours" data-animation="stagger-up">
+      <div class="twiy-ring" aria-hidden="true"></div>
+      <h2 class="twiy-title">
+        <span class="twiy-word">THE</span>
+        <span class="twiy-word">WORLD</span>
+        <span class="twiy-word">IS</span>
+        <span class="twiy-word">YOURS</span>
+      </h2>
+      <p class="twiy-sub">y empieza con un taco en la mano</p>
+    </section>
+
+    <!-- 9. MOMENTOS / FEED DE INSTAGRAM -->
     <section class="section section-instagram" id="momentos">
       <div class="papel-picado" aria-hidden="true">
         <svg viewBox="0 0 1200 74" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
@@ -155,7 +190,7 @@
         </svg>
       </div>
       <div class="section-head" data-animation="fade-up">
-        <span class="section-label">03 · Momentos</span>
+        <span class="section-label">05 · Momentos</span>
         <h2 class="section-heading">Lo que pasa en la taquería</h2>
         <p class="section-script">…se publica en Instagram</p>
       </div>
@@ -194,27 +229,12 @@
     </section>
 
     <!-- 9. SALSAS -->
-    <section class="section section-salsas" id="salsas">
-      <div class="section-head" data-animation="fade-up">
-        <span class="section-label">04 · Picor</span>
-        <h2 class="section-heading">Las salsas de la casa</h2>
-        <p class="section-script">elige tu nivel de valentía</p>
-      </div>
-      <div class="salsa-scale" aria-hidden="true" data-animation="blur-up">
-        <span>Suave</span>
-        <span class="salsa-scale-bar"></span>
-        <span>¡Extrema!</span>
-      </div>
-      <div class="salsas-grid" id="salsas-grid" data-animation="stagger-up"></div>
-      <p class="salsas-note" data-animation="fade-up">Todas acompañan tus tacos sin costo. La Fantasma no perdona: avisado quedas.</p>
-    </section>
-
     <!-- 10. UBICACIÓN -->
     <section class="section section-ubicacion" id="ubicacion">
       <div class="ubicacion-bg" aria-hidden="true"></div>
       <div class="ubicacion-grid">
         <div class="ubicacion-card" data-animation="clip-reveal">
-          <span class="section-label">05 · Ubicación</span>
+          <span class="section-label">06 · Ubicación</span>
           <h2 class="section-heading">Cómo llegar</h2>
           <p class="section-body">Nos encuentras en <strong>Cl. 11 #9-36, Cota, Cundinamarca</strong> — a un antojo de distancia de Bogotá. Patio al aire libre, sombrillas y estufas para las noches de sabana.</p>
           <div class="ubicacion-ctas">
@@ -225,34 +245,6 @@
         </div>
         <div class="ubicacion-map" data-animation="blur-up">
           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.05!2d-74.105937!3d4.812162!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f870003a3c13d%3A0x88b5aa4100cdf9a2!2sGran%20Patron!5e0!3m2!1ses!2sco!4v1751940000000" loading="lazy" title="Mapa: Gran Patrón Taquería en Cota, Cundinamarca" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-        </div>
-      </div>
-    </section>
-
-    <!-- 11. PEDIDO POR WHATSAPP -->
-    <section class="section section-pedido" id="pedido" data-animation="blur-up" data-persist="true">
-      <div class="section-head">
-        <span class="section-label">06 · Tu Pedido</span>
-        <h2 class="section-heading">Arma tu pedido</h2>
-        <p class="section-script">y te lo llevamos a domicilio 🛵</p>
-      </div>
-      <div class="pedido-panel">
-        <div id="cart-empty" class="cart-empty">
-          <p>Tu pedido está vacío. El menú está arriba, esperándote. 👆</p>
-          <a class="btn btn-outline" href="#menu" data-scroll="#menu">Volver al menú</a>
-        </div>
-        <div id="cart-full" class="cart-full" hidden>
-          <div class="cart-head">
-            <span class="cart-head-title">Tu pedido</span>
-            <span class="cart-badge" id="cart-count-badge">0 ítems</span>
-          </div>
-          <ul class="cart-list" id="cart-list"></ul>
-          <div class="cart-total-row"><span>Total</span><strong id="cart-total">$0</strong></div>
-          <p class="cart-note">Tu pedido va a domicilio 🛵 — la dirección, proteína y salsas los confirmas en el chat.</p>
-          <button class="btn btn-gold btn-send" id="cart-send" type="button">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.1-4.7-4-4.9-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5s.8 1.9.8 2c.1.1.1.3 0 .5l-.4.6c-.1.2-.3.4-.1.7.2.3.8 1.3 1.7 2.1 1.2 1.1 2.2 1.4 2.5 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4 0 .1 0 .7-.1 1.3Z"/></svg>
-            Enviar pedido por WhatsApp
-          </button>
         </div>
       </div>
     </section>
@@ -281,9 +273,9 @@
   <!-- Librerías auto-hospedadas: sin CDN externo que pueda fallar
        (redes corporativas, bloqueadores, certificados viejos). app.js
        además detecta si faltan y usa fallbacks nativos. -->
-  <script src="js/vendor/lenis.min.js?v=6"></script>
-  <script src="js/vendor/gsap.min.js?v=6"></script>
-  <script src="js/vendor/ScrollTrigger.min.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/vendor/lenis.min.js?v=7"></script>
+  <script src="js/vendor/gsap.min.js?v=7"></script>
+  <script src="js/vendor/ScrollTrigger.min.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>

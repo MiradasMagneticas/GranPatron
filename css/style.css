@@ -3,10 +3,18 @@
    ═══════════════════════════════════════════════ */
 
 :root {
-  --negro-comal: #15110D;
-  --negro-panel: #1D1712;
+  /* SISTEMA DE COLOR (regla de uso):
+     dorado    = valor / precio / CTA principal
+     terracota = estado activo / picante / acento secundario
+     negro cálido = fondo (nunca negro puro full-bleed)
+     hueso     = respiro / secciones claras */
+  --negro-comal: #1A1512;      /* negro cálido con tinte café — base */
+  --negro-panel: #231B14;      /* paneles/cards, un paso más cálido */
   --dorado-patron: #C9A227;
   --dorado-claro: #F0D586;
+  --terracota: #C1502E;        /* acento secundario: activos, picante */
+  --terracota-claro: #E07A55;
+  --hueso: #F5EFE6;            /* blanco cálido para la zona clara */
   --rojo-guajillo: #9E2B25;
   --masa-cruda: #F3E6C9;
   --verde-tomatillo: #6E7B3C;
@@ -16,6 +24,7 @@
   --texto-suave: rgba(243, 236, 221, 0.72);
   --linea-oro: rgba(201, 162, 39, 0.22);
   --font-display: 'Playfair Display', serif;
+  --font-brand: 'Fraunces', serif;   /* solo para el momento de marca */
   --font-script: 'Cormorant Garamond', serif;
   --font-body: 'Work Sans', sans-serif;
   --header-h: 72px;
@@ -439,70 +448,45 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .menu-tabs-wrap::before { left: -2px; opacity: 0.14; }
 .menu-tabs-wrap::after { right: -2px; content: "✿"; opacity: 0.2; }
-.menu-block-head {
-  display: flex; align-items: baseline; gap: 14px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--linea-oro);
-  padding-bottom: 16px;
-  margin-bottom: 24px;
-}
-.menu-block-icon { font-size: 1.7rem; transform: translateY(3px); }
-.menu-block-title {
-  font-family: var(--font-display); font-weight: 800;
-  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
-  color: var(--dorado-claro);
-}
-.menu-block-sub { color: var(--texto-suave); font-size: 0.95rem; font-style: italic; }
-.menu-divider {
+/* (Los paneles separados "La Cocina" / "La Barra" se unificaron en un solo
+   carrusel de filtros — ver .menu-tabs.) */
+
+/* Mensaje de incentivo: una sola línea, tono cercano */
+.menu-incentivo {
   text-align: center;
-  margin: clamp(60px, 9vh, 100px) auto;
-  position: relative;
+  font-size: clamp(0.9rem, 2.6vw, 1.02rem);
+  color: var(--texto-suave);
+  margin: -14px auto 26px;
+  max-width: 42ch;
 }
-.menu-divider::before, .menu-divider::after {
-  content: ""; position: absolute; top: 50%;
-  width: calc(50% - 90px); height: 1px;
-  background: linear-gradient(90deg, transparent, var(--linea-oro));
-}
-.menu-divider::before { left: 0; }
-.menu-divider::after { right: 0; transform: scaleX(-1); }
-.menu-divider span { color: var(--dorado-patron); font-size: 0.9rem; letter-spacing: 6px; }
 
-/* La Barra: panel con tinte verde agave para separarla de la cocina */
-.menu-barra {
-  background:
-    radial-gradient(ellipse 700px 400px at 85% 0%, rgba(110, 123, 60, 0.16), transparent 65%),
-    linear-gradient(165deg, rgba(110, 123, 60, 0.10), rgba(21, 17, 13, 0) 55%);
-  border: 1px solid rgba(110, 123, 60, 0.3);
-  border-radius: 24px;
-  padding: clamp(24px, 4vw, 44px);
-}
-.menu-barra .menu-block-head { border-color: rgba(110, 123, 60, 0.4); }
-.menu-barra .menu-block-title { color: #C9D18B; }
-.menu-barra .menu-tab.active { background: var(--verde-tomatillo); border-color: var(--verde-tomatillo); color: #F5F2E4; }
-.menu-barra .menu-tab:hover { border-color: #9BAA55; color: #C9D18B; }
-
+/* Carrusel de filtros: scroll-snap nativo, fluido con el dedo, sin JS pesado */
 .menu-tabs {
-  display: flex; gap: 10px; justify-content: flex-start;
+  display: flex; gap: 8px; justify-content: flex-start;
   overflow-x: auto; padding: 4px 4px 14px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   position: relative;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 8px;
 }
 .menu-tabs::-webkit-scrollbar { display: none; }
 .menu-tab {
   flex: 0 0 auto;
-  background: rgba(29, 23, 18, 0.6); border: 1px solid var(--linea-oro);
+  scroll-snap-align: start;
+  background: rgba(35, 27, 20, 0.6); border: 1px solid var(--linea-oro);
   color: var(--texto-suave);
-  font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 11px 20px; border-radius: 999px;
-  transition: all 0.3s ease;
+  font-size: clamp(0.72rem, 2.2vw, 0.8rem); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 11px 18px; border-radius: 999px;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
   white-space: nowrap;
 }
-.menu-tab:hover { border-color: var(--dorado-patron); color: var(--dorado-claro); }
+.menu-tab:hover { border-color: var(--terracota-claro); color: var(--terracota-claro); }
+/* Estado activo = terracota (el dorado queda para precios/CTA) */
 .menu-tab.active {
-  background: var(--dorado-patron); border-color: var(--dorado-patron);
-  color: var(--texto-oscuro); font-weight: 600;
-  box-shadow: 0 6px 20px rgba(201, 162, 39, 0.3);
+  background: var(--terracota); border-color: var(--terracota);
+  color: #FFF3EA; font-weight: 600;
+  box-shadow: 0 6px 18px rgba(193, 80, 46, 0.35);
 }
 .menu-tab.premium-tab {
   border-color: rgba(240, 213, 134, 0.55);
@@ -513,12 +497,6 @@ body.loaded .hero-glow { animation-name: softIn2; }
   font-size: 0.72em;
   color: var(--dorado-claro);
   opacity: 0.85;
-}
-.menu-barra .menu-tab.premium-tab.active {
-  background: linear-gradient(120deg, #1E3A5F, #0F2744);
-  border-color: rgba(147, 197, 253, 0.65);
-  color: #E8F0FF;
-  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.35), 0 0 20px rgba(96, 165, 250, 0.2);
 }
 .menu-tagline {
   font-family: var(--font-script); font-style: italic; font-weight: 600;
@@ -561,12 +539,14 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .menu-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .menu-card-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: 1.1rem; line-height: 1.2;
+  font-size: clamp(0.98rem, 2.8vw, 1.1rem); line-height: 1.2;
   color: var(--texto-claro);
+  min-width: 0;
+  overflow-wrap: anywhere; /* nombres largos nunca desbordan a 320px */
 }
 .menu-card-price {
   font-family: var(--font-display); font-weight: 700;
-  font-size: 1.08rem; color: var(--dorado-claro);
+  font-size: clamp(0.95rem, 2.7vw, 1.08rem); color: var(--dorado-claro);
   white-space: nowrap;
   text-shadow: 0 0 16px rgba(201, 162, 39, 0.35);
 }
@@ -599,7 +579,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 /* Licores: vitrina premium */
 .licores-grid { grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); }
-.menu-barra .licores-grid {
+.licores-grid {
   background:
     radial-gradient(ellipse 900px 500px at 50% 0%, rgba(30, 58, 138, 0.28), transparent 65%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.15));
@@ -679,9 +659,11 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .licor-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: 1.02rem; line-height: 1.25;
+  font-size: clamp(0.92rem, 2.7vw, 1.02rem); line-height: 1.25;
   color: var(--masa-cruda);
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .licor-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
 .licor-price {
@@ -773,8 +755,10 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 
 /* ── INSTAGRAM (sección crema) ──────────────── */
+/* Zona clara: hueso cálido (no blanco puro) y acentos terracota —
+   el dorado se reserva para precios/CTAs. */
 .section-instagram {
-  background: linear-gradient(180deg, var(--negro-comal) 0%, #6B5638 6%, var(--masa-cruda) 13%, var(--masa-cruda) 88%, #5C2320 100%);
+  background: linear-gradient(180deg, var(--negro-comal) 0%, #6B5638 6%, var(--hueso) 13%, var(--hueso) 88%, #5C2320 100%);
   padding-top: clamp(120px, 15vh, 190px);
   padding-bottom: clamp(120px, 15vh, 180px);
 }
@@ -788,11 +772,11 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .section-instagram .section-head::before {
   background: radial-gradient(ellipse, rgba(158, 43, 37, 0.1), transparent 70%);
 }
-.section-instagram .section-label { color: var(--rojo-guajillo); }
+.section-instagram .section-label { color: var(--terracota); }
 .section-instagram .section-label::before,
-.section-instagram .section-label::after { color: var(--rojo-guajillo); }
+.section-instagram .section-label::after { color: var(--terracota); }
 .section-instagram .section-heading { color: var(--texto-oscuro); }
-.section-instagram .section-script { color: var(--naranja-adobo); }
+.section-instagram .section-script { color: var(--terracota); }
 
 .ig-card {
   max-width: 640px; margin: 0 auto;
@@ -812,7 +796,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   outline: 3px solid transparent;
   background:
     linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(45deg, var(--dorado-patron), var(--rojo-guajillo), var(--naranja-adobo)) border-box;
+    linear-gradient(45deg, var(--terracota), var(--rojo-guajillo), var(--terracota-claro)) border-box;
   flex-shrink: 0;
 }
 .ig-id { flex: 1; min-width: 0; }
@@ -823,14 +807,14 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .ig-bio { font-size: 0.82rem; line-height: 1.55; color: #333; }
 .ig-follow {
-  background: linear-gradient(120deg, var(--dorado-patron), #E0BC46);
-  color: var(--texto-oscuro);
+  background: var(--terracota);
+  color: #FFF3EA;
   font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em;
   padding: 9px 22px; border-radius: 10px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   flex-shrink: 0;
 }
-.ig-follow:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(201, 162, 39, 0.4); }
+.ig-follow:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(193, 80, 46, 0.4); background: var(--terracota-claro); }
 .ig-highlights {
   display: flex; gap: 18px;
   padding: 8px 22px 18px;
@@ -848,7 +832,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   width: 62px; height: 62px;
   border-radius: 50%;
   padding: 3px;
-  background: linear-gradient(45deg, var(--dorado-patron), var(--rojo-guajillo), var(--naranja-adobo));
+  background: linear-gradient(45deg, var(--terracota), var(--rojo-guajillo), var(--terracota-claro));
 }
 .ig-ring img {
   width: 100%; height: 100%;
@@ -885,7 +869,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   text-align: center;
   padding: 18px;
   font-size: 0.88rem; font-weight: 500;
-  color: var(--rojo-guajillo);
+  color: var(--terracota);
   border-top: 1px solid #efefef;
   transition: background 0.3s ease;
 }
@@ -901,151 +885,43 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .section-salsas .section-head::before {
   background: radial-gradient(ellipse, rgba(240, 213, 134, 0.12), transparent 70%);
 }
-.salsa-scale {
-  display: flex; align-items: center; gap: 16px;
-  max-width: 620px;
-  margin: 0 auto clamp(30px, 5vh, 48px);
-  font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(243, 236, 221, 0.85);
-}
-.salsa-scale-bar {
-  flex: 1; height: 8px; border-radius: 6px;
-  background: linear-gradient(90deg, #8FA653, #E0BC46, #C96B2D, #B3251C);
-  box-shadow: 0 0 18px rgba(224, 188, 70, 0.25);
-}
+/* Salsas compactas: filas ligeras — nombre, chiles y una línea.
+   El picor se lee por chiles rellenos (terracota), sin barras genéricas. */
 .salsas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-  max-width: 1100px;
+  max-width: 640px;
   margin: 0 auto;
-  padding-bottom: clamp(28px, 5vh, 48px);
+  border: 1px solid rgba(240, 213, 134, 0.16);
+  border-radius: 16px;
+  background: rgba(26, 21, 18, 0.45);
+  overflow: hidden;
 }
-.salsa-card {
-  position: relative;
-  overflow: visible;
-  background: rgba(21, 17, 13, 0.45);
-  border: 2px solid rgba(240, 213, 134, 0.2);
-  border-radius: 18px;
-  padding: 22px 24px;
-  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+.salsa-row {
+  padding: 14px clamp(14px, 4vw, 22px);
+  border-bottom: 1px solid rgba(240, 213, 134, 0.1);
 }
-.salsa-card-deco {
-  position: absolute; inset: -3px;
-  pointer-events: none;
-  border-radius: 20px;
-  opacity: 0.55;
-}
-.salsa-card.h1 .salsa-card-deco {
-  border: 1px dashed rgba(143, 166, 83, 0.35);
-  background:
-    repeating-linear-gradient(0deg, transparent 0 10px, rgba(143, 166, 83, 0.06) 10px 11px),
-    repeating-linear-gradient(90deg, transparent 0 10px, rgba(143, 166, 83, 0.06) 10px 11px);
-}
-.salsa-card.h2 .salsa-card-deco {
-  border: 2px double rgba(224, 188, 70, 0.4);
-  background:
-    repeating-linear-gradient(45deg, rgba(224, 188, 70, 0.05) 0 4px, transparent 4px 12px);
-}
-.salsa-card.h3 .salsa-card-deco {
-  border: 2px solid rgba(201, 107, 45, 0.55);
-  box-shadow:
-    inset 0 0 0 4px rgba(21, 17, 13, 0.85),
-    inset 0 0 0 5px rgba(201, 107, 45, 0.35);
-  background:
-    repeating-linear-gradient(90deg, rgba(201, 107, 45, 0.12) 0 2px, transparent 2px 10px),
-    repeating-linear-gradient(0deg, rgba(201, 107, 45, 0.08) 0 2px, transparent 2px 10px);
-}
-.salsa-card.h3::after {
-  content: "🌶";
-  position: absolute; top: -10px; right: 14px;
-  font-size: 0.9rem; opacity: 0.5;
-}
-.salsa-card.h4 .salsa-card-deco {
-  border: 3px solid rgba(179, 37, 28, 0.75);
-  box-shadow:
-    inset 0 0 0 5px rgba(21, 17, 13, 0.9),
-    inset 0 0 0 7px rgba(179, 37, 28, 0.45),
-    0 0 24px rgba(179, 37, 28, 0.25);
-  background:
-    repeating-linear-gradient(45deg, rgba(179, 37, 28, 0.14) 0 3px, transparent 3px 9px),
-    repeating-linear-gradient(-45deg, rgba(179, 37, 28, 0.1) 0 3px, transparent 3px 9px),
-    radial-gradient(circle at 8% 12%, rgba(179, 37, 28, 0.35) 0 6px, transparent 7px),
-    radial-gradient(circle at 92% 88%, rgba(179, 37, 28, 0.35) 0 6px, transparent 7px);
-  opacity: 0.9;
-}
-.salsa-card.h4::before {
-  content: "☠";
-  position: absolute; top: -12px; right: 12px;
-  font-size: 1.1rem; opacity: 0.55;
-  text-shadow: 0 0 12px rgba(179, 37, 28, 0.6);
-  z-index: 2;
-}
-.salsa-card.h4::after {
-  content: "🔥";
-  position: absolute; bottom: -10px; left: 14px;
-  font-size: 1rem; opacity: 0.55;
-  z-index: 2;
-}
-.salsa-card.h1 {
-  border-color: rgba(143, 166, 83, 0.28);
-  background: linear-gradient(165deg, rgba(21, 17, 13, 0.55), rgba(30, 38, 18, 0.35));
-}
-.salsa-card.h2 {
-  border-color: rgba(224, 188, 70, 0.35);
-  background: linear-gradient(165deg, rgba(21, 17, 13, 0.5), rgba(48, 38, 14, 0.38));
-}
-.salsa-card.h3 {
-  border-color: rgba(201, 107, 45, 0.5);
-  background: linear-gradient(165deg, rgba(21, 17, 13, 0.48), rgba(58, 28, 12, 0.45));
-  box-shadow: 0 0 24px rgba(201, 107, 45, 0.12);
-}
-.salsa-card.h4 {
-  border-color: rgba(179, 37, 28, 0.7);
-  background: linear-gradient(165deg, rgba(46, 12, 10, 0.85), rgba(21, 17, 13, 0.55));
-  box-shadow: 0 0 36px rgba(179, 37, 28, 0.22), inset 0 0 40px rgba(179, 37, 28, 0.08);
-}
-.salsa-card:hover {
-  transform: translateY(-6px) rotate(-0.4deg);
-  border-color: rgba(240, 213, 134, 0.55);
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
-}
-.salsa-card.h4:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 24px 52px rgba(179, 37, 28, 0.35), 0 0 48px rgba(179, 37, 28, 0.2);
-}
-.salsa-card-top {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  margin-bottom: 6px;
+.salsa-row:last-child { border-bottom: none; }
+.salsa-row-main {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
 .salsa-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: 1.15rem; color: var(--masa-cruda);
+  font-size: clamp(1rem, 3vw, 1.12rem);
+  color: var(--masa-cruda);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-.salsa-level {
-  font-size: 0.68rem; font-weight: 600;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 4px 12px; border-radius: 999px;
-  white-space: nowrap;
+.salsa-flavor {
+  font-size: clamp(0.78rem, 2.4vw, 0.85rem);
+  color: rgba(243, 236, 221, 0.6);
+  font-style: italic;
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.salsa-level.h1 { background: rgba(143, 166, 83, 0.22); color: #C9D18B; border: 1px solid rgba(143, 166, 83, 0.5); }
-.salsa-level.h2 { background: rgba(224, 188, 70, 0.16); color: var(--dorado-claro); border: 1px solid rgba(224, 188, 70, 0.5); }
-.salsa-level.h3 { background: rgba(201, 107, 45, 0.2); color: #F0B384; border: 1px solid rgba(201, 107, 45, 0.55); }
-.salsa-level.h4 { background: rgba(179, 37, 28, 0.28); color: #FF9C93; border: 1px solid rgba(179, 37, 28, 0.65); }
-.salsa-flavor { font-size: 0.85rem; color: rgba(243, 236, 221, 0.65); font-style: italic; margin-bottom: 12px; }
-.salsa-heat { display: flex; gap: 5px; }
-.salsa-heat svg { width: 18px; height: 18px; }
-.salsa-heat .chile-on { color: #E8543F; filter: drop-shadow(0 0 5px rgba(232, 84, 63, 0.5)); }
-.salsa-card.h4 .salsa-heat .chile-on {
-  color: #FF3B2E;
-  filter: drop-shadow(0 0 8px rgba(255, 59, 46, 0.75));
-  animation: chilePulse 1.4s ease-in-out infinite;
-}
-@keyframes chilePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-.salsa-heat .chile-off { color: rgba(243, 236, 221, 0.18); }
+.salsa-heat { display: flex; gap: 4px; flex-shrink: 0; }
+.salsa-heat svg { width: 16px; height: 16px; }
+.salsa-heat .chile-on { color: var(--terracota); }
+.salsa-row.h4 .salsa-heat .chile-on { color: #E8543F; filter: drop-shadow(0 0 4px rgba(232, 84, 63, 0.45)); }
+.salsa-heat .chile-off { color: rgba(243, 236, 221, 0.16); }
 .salsas-note {
   position: relative;
   z-index: 2;
@@ -1172,7 +1048,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   color: var(--dorado-patron);
   font-size: 1.2rem;
 }
-.cart-item-name { flex: 1; font-size: 0.98rem; }
+.cart-item-name { flex: 1; font-size: clamp(0.88rem, 2.6vw, 0.98rem); min-width: 0; overflow-wrap: anywhere; }
 .cart-item-name small { display: block; color: var(--texto-suave); font-size: 0.78rem; }
 .cart-qty { display: flex; align-items: center; gap: 10px; }
 .cart-qty button {
@@ -1205,8 +1081,10 @@ body.loaded .hero-glow { animation-name: softIn2; }
    para que el pill NO aparezca con el carrito vacío. */
 .cart-pill[hidden] { display: none !important; }
 .cart-pill {
-  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
-  z-index: 90;
+  /* Safe-area: en iPhone/Android con barra de gestos el botón sube lo
+     necesario para no quedar tapado (requiere viewport-fit=cover). */
+  position: fixed; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+  z-index: 130; /* por encima del header (100) y de cualquier fijo */
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   background: linear-gradient(135deg, var(--dorado-patron) 0%, #E0BC46 45%, #F0D586 100%);
   color: var(--texto-oscuro);
@@ -1289,6 +1167,47 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* .licor-media ya trae su vitrina degradada clara como base; el mapa
    (.ubicacion-map) ya tiene panel oscuro propio. */
 
+/* ── MOMENTO DE MARCA · THE WORLD IS YOURS ──── */
+/* 100% tipográfico: sin imagen, sin textura. Fraunces con carácter
+   editorial, dorado sólido, y un anillo fino de trazo como guiño al
+   globo — sin caer en el cliché literal. */
+.section-twiy {
+  position: relative;
+  min-height: min(72vh, 640px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  background: var(--negro-comal);
+  overflow: hidden;
+  text-align: center;
+}
+.twiy-ring {
+  position: absolute; top: 50%; left: 50%;
+  width: min(520px, 86vw); aspect-ratio: 1;
+  transform: translate(-50%, -54%);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.twiy-title {
+  position: relative;
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 9vw, 6.875rem); /* 40px → 110px */
+  line-height: 1.04;
+  letter-spacing: 0.06em;
+  color: var(--dorado-patron);
+  text-transform: uppercase;
+  max-width: 10ch;
+}
+.twiy-word { display: inline-block; }
+.twiy-sub {
+  position: relative;
+  font-family: var(--font-body);
+  font-size: clamp(0.85rem, 2.6vw, 1rem);
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
 /* ── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 960px) {
   .nosotros-inner { grid-template-columns: 1fr; }
@@ -1313,7 +1232,6 @@ body.loaded .hero-glow { animation-name: softIn2; }
   .hero-ctas .btn { width: min(280px, 78vw); }
   .menu-card-thumb { width: 84px; height: 84px; }
   .licor-media { height: 200px; }
-  .menu-barra { padding: 20px 14px; }
   .menu-tabs {
     -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
     mask-image: linear-gradient(to right, #000 82%, transparent);
@@ -1330,7 +1248,9 @@ body.loaded .hero-glow { animation-name: softIn2; }
   .ubicacion-card .section-body { margin: 0 auto; }
   .cart-pill {
     left: 0; right: 0; bottom: 0;
-    width: 100%; max-width: none;
+    /* left+right definen el ancho (sin width:100%, que en navegadores con
+       scrollbar clásica cuenta de más y desborda). */
+    width: auto; max-width: none;
     transform: none;
     border-radius: 0;
     border-left: none; border-right: none; border-bottom: none;
@@ -1351,7 +1271,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 
 @media (max-width: 460px) {
   .menu-grid { grid-template-columns: 1fr; }
-  .salsas-grid { grid-template-columns: 1fr; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1383,9 +1303,6 @@ html:not(.js-anim) [data-animation] * {
 .menu-card,
 .licor-card,
 .menu-note,
-.menu-block-head {
-  visibility: visible !important;
-}
 
 /* ── LIBERACIÓN GLOBAL DE COMPONENTES (FALLBACK ESTÁTICO) ────────────
    El JS añade body.animations-disabled cuando GSAP/ScrollTrigger no están
@@ -1406,7 +1323,7 @@ body.animations-disabled .ig-grid,
 body.animations-disabled .ig-header,
 body.animations-disabled .ig-highlights,
 body.animations-disabled .ig-open,
-body.animations-disabled .salsa-card,
+body.animations-disabled .salsa-row,
 body.animations-disabled .nosotros-card,
 body.animations-disabled .meme-frame,
 body.animations-disabled .meme-frame img,

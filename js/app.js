@@ -77,7 +77,7 @@ const FRAME_COUNT = 27;
    mismo nombre de archivo, y un celular con caché antiguo mezclaba secuencias
    (frames viejos + nuevos = parpadeos y "fantasmas"). Subir la versión
    obliga a todos los dispositivos a bajar la secuencia vigente. */
-const ASSET_V = "6";
+const ASSET_V = "7";
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp?v=${ASSET_V}`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
@@ -194,7 +194,7 @@ const MENU_BARRA = [
     ]
   },
   {
-    id: "licores", tab: "Licores", tagline: "La reserva del patrón", premium: true,
+    id: "licores", tab: "Licores & Botellas", tagline: "La reserva del patrón", premium: true,
     items: [
       { n: "½ Aguardiente Amarillo", p: 75000, img: LICOR_IMG("aguardiente-amarillo-media"), tag: "Media botella", type: "Aguardiente" },
       { n: "½ Aguardiente Ant. Azul", p: 75000, img: LICOR_IMG("aguardiente-antioqueno-media"), tag: "Media botella", type: "Aguardiente" },
@@ -655,7 +655,7 @@ function setupEntrances() {
     const children = el.querySelectorAll(
       ":scope > .section-label, :scope > .section-heading, :scope > .section-script, :scope > .section-body, " +
       ".menu-block-head, :scope > .menu-tabs, :scope > .menu-tagline, :scope > .menu-grid, :scope > .menu-note, " +
-      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-card, " +
+      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-row, .twiy-word, .twiy-sub, " +
       ":scope > .ubicacion-ctas, :scope > .ubicacion-horario, :scope > .pedido-panel, .meme-frame img"
     );
     const targets = children.length ? children : [el];
@@ -710,7 +710,7 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
   if (!tabsEl || !gridEl) return;
   let active = cats[0].id;
 
-  function renderTabs() {
+  function renderTabs(userTriggered) {
     tabsEl.innerHTML = "";
     cats.forEach((cat) => {
       const btn = document.createElement("button");
@@ -724,11 +724,20 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
       btn.addEventListener("click", () => {
         if (cat.id === active) return;
         active = cat.id;
-        renderTabs();
+        renderTabs(true);
         renderGrid(true);
       });
       tabsEl.appendChild(btn);
     });
+    // El filtro elegido se auto-centra en el carrusel para quedar visible.
+    // Solo cuando lo toca el usuario (no en el primer render, para no mover
+    // la barra sola al cargar).
+    if (userTriggered) {
+      const act = tabsEl.querySelector(".menu-tab.active");
+      if (act && act.scrollIntoView) {
+        act.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
   }
 
   function foodCard(cat, item) {
@@ -906,23 +915,23 @@ function initCart() {
 }
 
 /* ── SALSAS ─────────────────────────────────── */
+/* Salsas compactas: una fila por salsa — nombre, chiles rellenos según
+   intensidad y una sola línea de descripción. Sin tarjetas pesadas. */
 function renderSalsas() {
   const grid = document.getElementById("salsas-grid");
   if (!grid) return;
   SALSAS.forEach((s) => {
-    const card = document.createElement("div");
-    card.className = `salsa-card h${s.h}`;
+    const row = document.createElement("div");
+    row.className = `salsa-row h${s.h}`;
     const heat = Array.from({ length: 4 }, (_, i) =>
       `<span class="${i < s.h ? "chile-on" : "chile-off"}">${CHILE_SVG}</span>`).join("");
-    card.innerHTML = `
-      <div class="salsa-card-deco" aria-hidden="true"></div>
-      <div class="salsa-card-top">
+    row.innerHTML = `
+      <div class="salsa-row-main">
         <h4 class="salsa-name">${s.n}</h4>
-        <span class="salsa-level h${s.h}">${s.label}</span>
+        <span class="salsa-heat" role="img" aria-label="Picor ${s.h} de 4 (${s.label})">${heat}</span>
       </div>
-      <p class="salsa-flavor">${s.f}</p>
-      <div class="salsa-heat">${heat}</div>`;
-    grid.appendChild(card);
+      <p class="salsa-flavor">${s.f}</p>`;
+    grid.appendChild(row);
   });
 }
 
@@ -942,8 +951,9 @@ function setupReel() {
 /* ── INIT ───────────────────────────────────── */
 /* ORDEN CRÍTICO: el menú, las salsas y el carrito van PRIMERO y aislados.
    Aunque el canvas, GSAP o Lenis fallen, la carta se pinta siempre. */
-safe("menú · la cocina", () => initMenuBlock(MENU_COCINA, "tabs-cocina", "tagline-cocina", "grid-cocina", "note-cocina"));
-safe("menú · la barra", () => initMenuBlock(MENU_BARRA, "tabs-barra", "tagline-barra", "grid-barra", "note-barra"));
+/* Menú unificado: un solo carrusel de filtros con las 9 categorías,
+   Licores incluido como filtro principal (no escondido en submenú). */
+safe("menú unificado", () => initMenuBlock(MENU_COCINA.concat(MENU_BARRA), "tabs-menu", "tagline-menu", "grid-menu", "note-menu"));
 safe("salsas", renderSalsas);
 safe("carrito", initCart);
 safe("navegación", initNav);
