@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <!-- Primer frame del hero con máxima prioridad: primer pintado instantáneo -->
-  <link rel="preload" as="image" href="assets/frames/frame_001.webp?v=7" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/frames/frame_001.webp?v=8" fetchpriority="high">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&family=Work+Sans:wght@300;400;500;600&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 
@@ -82,13 +82,14 @@
       <!-- Mensaje de incentivo: una línea, directo -->
       <p class="menu-incentivo" data-animation="fade-up">Arma tu pedido aquí mismo y te llega caliente a la puerta 🛵</p>
 
-      <!-- Filtros unificados: carrusel horizontal con scroll-snap.
-           Licores es filtro principal, al mismo nivel que el resto. -->
+      <!-- Menú en dos niveles: Comida | Bebidas, y dentro los filtros de
+           categoría. El swipe lateral en cualquier parte del menú cambia de
+           categoría (carrusel con scroll-snap); los filtros se sincronizan. -->
       <div class="menu-block" data-animation="fade-up">
+        <div class="menu-groups" id="menu-groups" role="tablist" aria-label="Tipo de carta"></div>
         <div class="menu-tabs" id="tabs-menu" role="tablist" aria-label="Categorías del menú"></div>
-        <p class="menu-tagline" id="tagline-menu"></p>
-        <div class="menu-grid" id="grid-menu"></div>
-        <p class="menu-note" id="note-menu"></p>
+        <p class="menu-swipe-hint" aria-hidden="true">← desliza para cambiar de categoría →</p>
+        <div class="menu-carousel" id="menu-carousel"></div>
       </div>
     </section>
 
@@ -153,19 +154,7 @@
       <p class="meme-caption">— filosofía oficial de la casa</p>
     </section>
 
-    <!-- 8. MOMENTO DE MARCA — The World Is Yours (100% tipográfico) -->
-    <section class="section section-twiy" aria-label="The world is yours" data-animation="stagger-up">
-      <div class="twiy-ring" aria-hidden="true"></div>
-      <h2 class="twiy-title">
-        <span class="twiy-word">THE</span>
-        <span class="twiy-word">WORLD</span>
-        <span class="twiy-word">IS</span>
-        <span class="twiy-word">YOURS</span>
-      </h2>
-      <p class="twiy-sub">y empieza con un taco en la mano</p>
-    </section>
-
-    <!-- 9. MOMENTOS / FEED DE INSTAGRAM -->
+    <!-- 8. MOMENTOS / FEED DE INSTAGRAM -->
     <section class="section section-instagram" id="momentos">
       <div class="papel-picado" aria-hidden="true">
         <svg viewBox="0 0 1200 74" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
@@ -261,6 +250,8 @@
       <a href="https://www.waze.com/live-map/directions?to=ll.4.812162%2C-74.105937" target="_blank" rel="noopener">Waze</a>
       <a href="https://www.google.com/maps?q=Gran+Patron,+Cl.+11+%239-36,+Cota,+Cundinamarca&ftid=0x8e3f870003a3c13d:0x88b5aa4100cdf9a2" target="_blank" rel="noopener">Google Maps</a>
     </nav>
+    <!-- Momento de marca: firma discreta, para quien se fija -->
+    <p class="twiy-firma" data-animation="fade-soft">the world is yours</p>
     <p class="footer-credits">© 2026 Gran Patrón Taquería · Cl. 11 #9-36, Cota, Cundinamarca · Hecho con 🌮 y cariño</p>
     <button class="back-to-top" id="back-to-top" type="button" aria-label="Volver arriba">↑</button>
   </footer>
@@ -273,9 +264,9 @@
   <!-- Librerías auto-hospedadas: sin CDN externo que pueda fallar
        (redes corporativas, bloqueadores, certificados viejos). app.js
        además detecta si faltan y usa fallbacks nativos. -->
-  <script src="js/vendor/lenis.min.js?v=7"></script>
-  <script src="js/vendor/gsap.min.js?v=7"></script>
-  <script src="js/vendor/ScrollTrigger.min.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/vendor/lenis.min.js?v=8"></script>
+  <script src="js/vendor/gsap.min.js?v=8"></script>
+  <script src="js/vendor/ScrollTrigger.min.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
 </body>
 </html>

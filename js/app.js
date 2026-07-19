@@ -77,7 +77,7 @@ const FRAME_COUNT = 27;
    mismo nombre de archivo, y un celular con caché antiguo mezclaba secuencias
    (frames viejos + nuevos = parpadeos y "fantasmas"). Subir la versión
    obliga a todos los dispositivos a bajar la secuencia vigente. */
-const ASSET_V = "7";
+const ASSET_V = "8";
 const FRAME_PATH = (i) => `assets/frames/frame_${String(i + 1).padStart(3, "0")}.webp?v=${ASSET_V}`;
 const PRELOAD_CONCURRENCY = 8;   // descargas en paralelo del preload
 const IMAGE_SCALE = 0.92;   // padded cover (taco protagonista)
@@ -156,7 +156,7 @@ const MENU_COCINA = [
 
 const MENU_BARRA = [
   {
-    id: "bebidas", tab: "Bebidas", tagline: "Aguas frescas y limonadas de la casa",
+    id: "bebidas", tab: "Aguas & Refrescos", tagline: "Aguas frescas y limonadas de la casa",
     items: [
       { n: "Horchata", d: "Arroz, canela y tradición.", p: 9000, img: IMG("horchata") },
       { n: "Agua de Jamaica", p: 8000, img: IMG("agua-jamaica") },
@@ -638,7 +638,10 @@ const ENTRANCES = {
   "rotate-in":  { from: { y: 40, rotation: -10, opacity: 0 }, dur: 0.9, ease: "power3.out" },
   "stagger-up": { from: { y: 60, opacity: 0 }, dur: 0.8, ease: "power3.out" },
   "clip-reveal": { from: { clipPath: "inset(100% 0 0 0)", y: 30, opacity: 0 }, dur: 1.1, ease: "power4.inOut" },
-  "blur-up":    { from: { y: 50, opacity: 0, filter: "blur(8px)" }, dur: 1.0, ease: "power3.out" }
+  "blur-up":    { from: { y: 50, opacity: 0, filter: "blur(8px)" }, dur: 1.0, ease: "power3.out" },
+  /* fade-soft: solo opacidad, lento y sin desplazamiento — para detalles
+     susurrados como la firma "the world is yours". */
+  "fade-soft":  { from: { opacity: 0 }, dur: 1.6, ease: "power1.out" }
 };
 
 function setupEntrances() {
@@ -654,8 +657,8 @@ function setupEntrances() {
     if (!cfg) return;
     const children = el.querySelectorAll(
       ":scope > .section-label, :scope > .section-heading, :scope > .section-script, :scope > .section-body, " +
-      ".menu-block-head, :scope > .menu-tabs, :scope > .menu-tagline, :scope > .menu-grid, :scope > .menu-note, " +
-      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-row, .twiy-word, .twiy-sub, " +
+      ":scope > .menu-groups, :scope > .menu-tabs, :scope > .menu-swipe-hint, :scope > .menu-carousel, " +
+      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-row, " +
       ":scope > .ubicacion-ctas, :scope > .ubicacion-horario, :scope > .pedido-panel, .meme-frame img"
     );
     const targets = children.length ? children : [el];
@@ -702,43 +705,35 @@ function itemId(catId, name) {
   return catId + "::" + name;
 }
 
-function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
-  const tabsEl = document.getElementById(tabsId);
-  const taglineEl = document.getElementById(taglineId);
-  const gridEl = document.getElementById(gridId);
-  const noteEl = document.getElementById(noteId);
-  if (!tabsEl || !gridEl) return;
-  let active = cats[0].id;
-
-  function renderTabs(userTriggered) {
-    tabsEl.innerHTML = "";
-    cats.forEach((cat) => {
-      const btn = document.createElement("button");
-      btn.className = "menu-tab"
-        + (cat.id === active ? " active" : "")
-        + (cat.premium ? " premium-tab" : "");
-      btn.type = "button";
-      btn.setAttribute("role", "tab");
-      btn.setAttribute("aria-selected", cat.id === active);
-      btn.textContent = cat.tab;
-      btn.addEventListener("click", () => {
-        if (cat.id === active) return;
-        active = cat.id;
-        renderTabs(true);
-        renderGrid(true);
-      });
-      tabsEl.appendChild(btn);
-    });
-    // El filtro elegido se auto-centra en el carrusel para quedar visible.
-    // Solo cuando lo toca el usuario (no en el primer render, para no mover
-    // la barra sola al cargar).
-    if (userTriggered) {
-      const act = tabsEl.querySelector(".menu-tab.active");
-      if (act && act.scrollIntoView) {
-        act.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }
-    }
+/* MENÚ EN DOS NIVELES + CARRUSEL SWIPEABLE
+   - Nivel 1: Comida | Bebidas (dentro de Bebidas, Licores va de segunda
+     opción, justo después de las bebidas sin alcohol).
+   - Nivel 2: filtros de categoría.
+   - El swipe es el método principal: cada categoría es un panel de un
+     carrusel con scroll-snap x mandatory; deslizar el dedo en cualquier
+     parte del menú pasa de categoría. Los filtros siguen funcionando al
+     tocarlos y se resaltan solos cuando el usuario desliza. */
+const MENU_GRUPOS = [
+  { id: "comida", label: "Comida", cats: MENU_COCINA },
+  {
+    id: "bebidas", label: "Bebidas",
+    cats: ["bebidas", "licores", "cervezas", "cocteles"]
+      .map((id) => MENU_BARRA.find((c) => c.id === id))
+      .filter(Boolean)
   }
+];
+
+function initMenu() {
+  const groupsEl = document.getElementById("menu-groups");
+  const tabsEl = document.getElementById("tabs-menu");
+  const carousel = document.getElementById("menu-carousel");
+  if (!groupsEl || !tabsEl || !carousel) return;
+
+  let grupo = MENU_GRUPOS[0];
+  let activeIdx = 0;
+  let panels = [];
+  let syncing = false;     // true mientras un click de filtro anima el scroll
+  let heightRO = null;
 
   function foodCard(cat, item) {
     const card = document.createElement("article");
@@ -787,31 +782,168 @@ function initMenuBlock(cats, tabsId, taglineId, gridId, noteId) {
     });
   }
 
-  function renderGrid(animate) {
-    const cat = cats.find((c) => c.id === active);
-    taglineEl.textContent = cat.tagline;
-    if (noteEl) noteEl.textContent = cat.note || "";
-    gridEl.innerHTML = "";
-    gridEl.classList.toggle("licores-grid", !!cat.premium);
-    cat.items.forEach((item) => {
-      gridEl.appendChild(cat.premium ? licorCard(cat, item) : foodCard(cat, item));
+  function buildPanel(cat) {
+    const panel = document.createElement("div");
+    panel.className = "menu-panel";
+    panel.dataset.cat = cat.id;
+    const tagline = document.createElement("p");
+    tagline.className = "menu-tagline";
+    tagline.textContent = cat.tagline;
+    panel.appendChild(tagline);
+    const grid = document.createElement("div");
+    grid.className = "menu-grid" + (cat.premium ? " licores-grid" : "");
+    cat.items.forEach((item) => grid.appendChild(cat.premium ? licorCard(cat, item) : foodCard(cat, item)));
+    panel.appendChild(grid);
+    if (cat.note) {
+      const note = document.createElement("p");
+      note.className = "menu-note";
+      note.textContent = cat.note;
+      panel.appendChild(note);
+    }
+    return panel;
+  }
+
+  /* La altura del carrusel sigue a la del panel activo: así Postres (4
+     platos) no hereda el alto de Tacos (14) y no quedan huecos muertos. */
+  function setCarouselHeight() {
+    const p = panels[activeIdx];
+    if (p) carousel.style.height = p.offsetHeight + "px";
+  }
+
+  function refreshLayoutSoon() {
+    clearTimeout(refreshLayoutSoon.t);
+    refreshLayoutSoon.t = setTimeout(() => { if (HAS_ST) ScrollTrigger.refresh(); }, 420);
+  }
+
+  function updateTabs(centerActive) {
+    Array.prototype.forEach.call(tabsEl.children, (btn, i) => {
+      btn.classList.toggle("active", i === activeIdx);
+      btn.setAttribute("aria-selected", i === activeIdx);
     });
-    if (animate && HAS_GSAP) {
-      gsap.fromTo([taglineEl, ...gridEl.children],
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, stagger: 0.05, duration: 0.6, ease: "power3.out", overwrite: true }
-      );
-      if (HAS_ST) ScrollTrigger.refresh();
+    const act = tabsEl.children[activeIdx];
+    if (centerActive && act && act.scrollIntoView) {
+      act.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   }
 
+  function setActive(idx, opts) {
+    opts = opts || {};
+    if (idx < 0 || idx >= panels.length) return;
+    activeIdx = idx;
+    updateTabs(true);
+    if (opts.scrollCarousel) {
+      syncing = true;
+      const target = idx * carousel.clientWidth;
+      carousel.scrollTo({ left: target, behavior: "smooth" });
+      clearTimeout(setActive.t);
+      setActive.t = setTimeout(() => {
+        syncing = false;
+        // Garantía de llegada: si el smooth scroll se suspendió (pestaña en
+        // segundo plano, navegador viejo), anclamos directo al panel.
+        if (Math.abs(carousel.scrollLeft - target) > 4) carousel.scrollLeft = target;
+      }, 550);
+    }
+    setCarouselHeight();
+    refreshLayoutSoon();
+  }
+
+  // Sincronía swipe → filtro: al deslizar, el botón correspondiente se
+  // resalta solo (rAF-throttled, sin trabajo pesado en el scroll).
+  function syncFromScroll() {
+    if (syncing) return;
+    const idx = Math.round(carousel.scrollLeft / Math.max(1, carousel.clientWidth));
+    if (idx !== activeIdx) setActive(idx, { scrollCarousel: false });
+  }
+  let scrollRaf = 0;
+  carousel.addEventListener("scroll", () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      syncFromScroll();
+    });
+  }, { passive: true });
+  // Respaldo: scrollend garantiza la sincronía final aunque se pierda un
+  // tick de rAF (pestaña en segundo plano, gama muy baja). También suelta
+  // el lock del click sin esperar el timeout.
+  carousel.addEventListener("scrollend", () => {
+    syncing = false;
+    syncFromScroll();
+  });
+
+  function renderTabs() {
+    tabsEl.innerHTML = "";
+    grupo.cats.forEach((cat, i) => {
+      const btn = document.createElement("button");
+      btn.className = "menu-tab"
+        + (i === activeIdx ? " active" : "")
+        + (cat.premium ? " premium-tab" : "");
+      btn.type = "button";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", i === activeIdx);
+      btn.textContent = cat.tab;
+      btn.addEventListener("click", () => {
+        if (i !== activeIdx) setActive(i, { scrollCarousel: true });
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function buildCarousel() {
+    if (heightRO) heightRO.disconnect();
+    carousel.innerHTML = "";
+    activeIdx = 0;
+    panels = grupo.cats.map(buildPanel);
+    panels.forEach((p) => carousel.appendChild(p));
+    carousel.scrollLeft = 0;
+    // Las imágenes lazy cambian la altura del panel al llegar: la
+    // observamos para que el carrusel siga siempre al panel activo.
+    if (typeof ResizeObserver !== "undefined") {
+      heightRO = new ResizeObserver(() => setCarouselHeight());
+      panels.forEach((p) => heightRO.observe(p));
+    }
+    // Altura inicial SÍNCRONA (offsetHeight ya está disponible tras insertar
+    // al DOM): no dependemos de un tick de rAF que puede llegar tarde si la
+    // pestaña carga en segundo plano. El rAF posterior solo corrige.
+    setCarouselHeight();
+    requestAnimationFrame(setCarouselHeight);
+    refreshLayoutSoon();
+  }
+
+  function renderGroups() {
+    groupsEl.innerHTML = "";
+    MENU_GRUPOS.forEach((g) => {
+      const btn = document.createElement("button");
+      btn.className = "menu-group-btn" + (g === grupo ? " active" : "");
+      btn.type = "button";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", g === grupo);
+      btn.textContent = g.label;
+      btn.addEventListener("click", () => {
+        if (g === grupo) return;
+        grupo = g;
+        renderGroups();
+        buildCarousel();
+        renderTabs();
+        updateTabs(true);
+      });
+      groupsEl.appendChild(btn);
+    });
+  }
+
+  renderGroups();
+  buildCarousel();
   renderTabs();
-  renderGrid(false);
+
+  // Al girar el teléfono, el ancho de panel cambia: re-anclamos el panel
+  // activo y recalculamos la altura.
+  window.addEventListener("resize", () => {
+    carousel.scrollLeft = activeIdx * carousel.clientWidth;
+    setCarouselHeight();
+  });
 
   // INICIALIZACIÓN DIRECTA: apenas la carta queda pintada, quitamos cualquier
   // clase de "oculto/loading" y forzamos visibilidad nativa en los contenedores.
-  // Así el navegador la pinta al instante, sin depender de GSAP ni de scroll.
-  [tabsEl, gridEl, taglineEl, noteEl, gridEl.closest(".menu-block")].forEach((node) => {
+  [groupsEl, tabsEl, carousel, carousel.closest(".menu-block")].forEach((node) => {
     if (!node) return;
     node.classList.remove("hidden", "is-hidden", "loading", "is-loading");
     node.style.visibility = "visible";
@@ -951,9 +1083,8 @@ function setupReel() {
 /* ── INIT ───────────────────────────────────── */
 /* ORDEN CRÍTICO: el menú, las salsas y el carrito van PRIMERO y aislados.
    Aunque el canvas, GSAP o Lenis fallen, la carta se pinta siempre. */
-/* Menú unificado: un solo carrusel de filtros con las 9 categorías,
-   Licores incluido como filtro principal (no escondido en submenú). */
-safe("menú unificado", () => initMenuBlock(MENU_COCINA.concat(MENU_BARRA), "tabs-menu", "tagline-menu", "grid-menu", "note-menu"));
+/* Menú en dos niveles (Comida/Bebidas) con carrusel swipeable por categoría. */
+safe("menú por grupos", initMenu);
 safe("salsas", renderSalsas);
 safe("carrito", initCart);
 safe("navegación", initNav);

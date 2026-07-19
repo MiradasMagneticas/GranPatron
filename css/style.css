@@ -460,6 +460,66 @@ body.loaded .hero-glow { animation-name: softIn2; }
   max-width: 42ch;
 }
 
+/* Nivel 1: Comida | Bebidas — botones grandes, serif, gap real (no
+   márgenes que se pierdan al envolver). Nada se recorta: overflow visible. */
+.menu-groups {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+.menu-group-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--linea-oro);
+  color: var(--texto-suave);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1rem, 3.2vw, 1.15rem);
+  letter-spacing: 0.02em;
+  padding: 12px 28px;
+  border-radius: 14px;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+.menu-group-btn:hover { border-color: var(--terracota-claro); color: var(--terracota-claro); }
+.menu-group-btn.active {
+  background: var(--terracota); border-color: var(--terracota);
+  color: #FFF3EA;
+  box-shadow: 0 6px 18px rgba(193, 80, 46, 0.3);
+}
+
+/* Pista de swipe (solo táctil): el deslizar es el método principal */
+.menu-swipe-hint {
+  font-size: 0.68rem; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--texto-suave);
+  opacity: 0.65;
+  margin: 0 0 12px;
+  text-align: center;
+}
+@media (hover: hover) and (pointer: fine) {
+  .menu-swipe-hint { display: none; }
+}
+
+/* Carrusel de categorías: swipe de sección completa. Deslizar el dedo en
+   CUALQUIER parte del menú pasa de categoría (scroll-snap x mandatory a
+   nivel de panel); la altura la maneja el JS según el panel activo. */
+.menu-carousel {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  transition: height 0.35s ease;
+  align-items: flex-start;
+}
+.menu-carousel::-webkit-scrollbar { display: none; }
+.menu-panel {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 /* Carrusel de filtros: scroll-snap nativo, fluido con el dedo, sin JS pesado */
 .menu-tabs {
   display: flex; gap: 8px; justify-content: flex-start;
@@ -876,11 +936,14 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .ig-open:hover { background: #FBF6EA; }
 
 /* ── SALSAS ─────────────────────────────────── */
+/* Transición en degradado en ambos bordes de contacto (~110px): entra
+   desde el negro cálido del pedido y sale hacia el negro de Nosotros —
+   nada de bloques de color pegados. */
 .section-salsas {
   background:
     radial-gradient(ellipse 800px 420px at 15% 8%, rgba(240, 213, 134, 0.10), transparent 60%),
     radial-gradient(ellipse 900px 500px at 88% 95%, rgba(21, 17, 13, 0.55), transparent 70%),
-    linear-gradient(180deg, #5C2320 0%, #471815 45%, #2E100E 100%);
+    linear-gradient(180deg, var(--negro-comal) 0px, #5C2320 110px, #471815 55%, #2E100E 88%, var(--negro-comal) 100%);
 }
 .section-salsas .section-head::before {
   background: radial-gradient(ellipse, rgba(240, 213, 134, 0.12), transparent 70%);
@@ -938,7 +1001,9 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* ── UBICACIÓN ──────────────────────────────── */
 .section-ubicacion {
   overflow: hidden;
-  background: linear-gradient(180deg, #2E100E 0%, var(--negro-comal) 22%);
+  /* Contacto con el cierre rojizo del feed de Instagram (#5C2320):
+     degradado de ~120px en vez de corte directo. */
+  background: linear-gradient(180deg, #5C2320 0px, var(--negro-comal) 120px);
 }
 .ubicacion-bg {
   position: absolute; inset: 0;
@@ -1167,45 +1232,16 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* .licor-media ya trae su vitrina degradada clara como base; el mapa
    (.ubicacion-map) ya tiene panel oscuro propio. */
 
-/* ── MOMENTO DE MARCA · THE WORLD IS YOURS ──── */
-/* 100% tipográfico: sin imagen, sin textura. Fraunces con carácter
-   editorial, dorado sólido, y un anillo fino de trazo como guiño al
-   globo — sin caer en el cliché literal. */
-.section-twiy {
-  position: relative;
-  min-height: min(72vh, 640px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px;
-  background: var(--negro-comal);
-  overflow: hidden;
-  text-align: center;
-}
-.twiy-ring {
-  position: absolute; top: 50%; left: 50%;
-  width: min(520px, 86vw); aspect-ratio: 1;
-  transform: translate(-50%, -54%);
-  border: 1px solid rgba(201, 162, 39, 0.28);
-  border-radius: 50%;
-  pointer-events: none;
-}
-.twiy-title {
-  position: relative;
+/* ── MOMENTO DE MARCA · firma discreta ──────── */
+/* "the world is yours" como sello de autor: pequeño, Fraunces regular,
+   dorado apagado, tracking amplio. Quien se fija, lo encuentra. */
+.twiy-firma {
   font-family: var(--font-brand);
-  font-weight: 700;
-  font-size: clamp(2.5rem, 9vw, 6.875rem); /* 40px → 110px */
-  line-height: 1.04;
-  letter-spacing: 0.06em;
-  color: var(--dorado-patron);
-  text-transform: uppercase;
-  max-width: 10ch;
-}
-.twiy-word { display: inline-block; }
-.twiy-sub {
-  position: relative;
-  font-family: var(--font-body);
-  font-size: clamp(0.85rem, 2.6vw, 1rem);
   font-weight: 400;
-  color: var(--texto-suave);
+  font-size: clamp(0.875rem, 2.4vw, 1.125rem); /* 14px → 18px */
+  letter-spacing: 0.22em;
+  color: rgba(201, 162, 39, 0.5); /* dorado apagado, no brillante */
+  margin-bottom: 14px;
 }
 
 /* ── RESPONSIVE ─────────────────────────────── */
@@ -1232,10 +1268,9 @@ body.loaded .hero-glow { animation-name: softIn2; }
   .hero-ctas .btn { width: min(280px, 78vw); }
   .menu-card-thumb { width: 84px; height: 84px; }
   .licor-media { height: 200px; }
-  .menu-tabs {
-    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
-    mask-image: linear-gradient(to right, #000 82%, transparent);
-  }
+  /* Sin mask-image: recortaba el último filtro contra el borde y parecía
+     un bug. El padding da aire y el propio scroll indica que hay más. */
+  .menu-tabs { padding-right: 28px; }
   .papel-picado { top: 30px; height: 54px; }
   .ig-header { flex-wrap: wrap; padding: 18px 16px 12px; }
   .ig-avatar { width: 62px; height: 62px; }
@@ -1271,7 +1306,13 @@ body.loaded .hero-glow { animation-name: softIn2; }
 
 @media (max-width: 460px) {
   .menu-grid { grid-template-columns: 1fr; }
-
+  /* Fila del carrito en dos líneas: foto+nombre arriba; cantidad y
+     subtotal abajo a la derecha. En 320px la fila de una línea no cabe
+     (48px foto + botones + subtotal min-width 86px desbordaban). */
+  .cart-item { flex-wrap: wrap; row-gap: 8px; }
+  .cart-item-name { flex: 1 1 0; min-width: 140px; }
+  .cart-qty { margin-left: auto; }
+  .cart-item-sub { min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
