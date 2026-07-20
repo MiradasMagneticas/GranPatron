@@ -114,7 +114,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .header-nav { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); }
 .header-nav > a:not(.btn-whatsapp-pill) {
-  font-size: 0.82rem; font-weight: 500;
+  font-size: clamp(0.72rem, 2.2vw, 0.82rem); font-weight: 500;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--texto-claro);
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
@@ -347,7 +347,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* ── BOTONES ────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  font-family: var(--font-body); font-size: 0.86rem; font-weight: 600;
+  font-family: var(--font-body); font-size: clamp(0.78rem, 2.4vw, 0.86rem); font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase;
   padding: 15px 32px; border-radius: 999px;
   border: none;
@@ -384,7 +384,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .section-label {
   display: inline-block;
-  font-size: 0.72rem; font-weight: 600;
+  font-size: clamp(0.62rem, 2vw, 0.72rem); font-weight: 600;
   letter-spacing: 0.42em; text-indent: 0.42em; text-transform: uppercase;
   color: var(--dorado-patron);
   margin-bottom: 18px;
@@ -610,7 +610,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
   white-space: nowrap;
   text-shadow: 0 0 16px rgba(201, 162, 39, 0.35);
 }
-.menu-card-desc { font-size: 0.83rem; line-height: 1.45; color: var(--texto-suave); flex: 1; }
+.menu-card-desc { font-size: clamp(0.75rem, 2.3vw, 0.83rem); line-height: 1.45; color: var(--texto-suave); flex: 1; }
 .menu-card-add {
   align-self: flex-end;
   margin-top: auto;
@@ -809,9 +809,22 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .meme-frame img { border: 1px solid rgba(201, 162, 39, 0.2); }
 .meme-caption {
-  margin-top: 30px;
+  margin-top: 14px;
   font-family: var(--font-script); font-style: italic; font-weight: 600;
-  font-size: 1.25rem; color: var(--texto-suave);
+  font-size: clamp(1.05rem, 3.2vw, 1.25rem); color: var(--texto-suave);
+}
+
+/* Firma discreta bajo el recuadro del taquito: Fraunces itálica, dorado
+   apagado, sin animación. */
+.twiy-firma {
+  margin-top: 22px;
+  font-family: var(--font-brand);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.72rem, 2.2vw, 0.88rem);
+  letter-spacing: 0.18em;
+  color: rgba(201, 162, 39, 0.55);
+  text-align: center;
 }
 
 /* ── INSTAGRAM (sección crema) ──────────────── */
@@ -939,52 +952,157 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* Transición en degradado en ambos bordes de contacto (~110px): entra
    desde el negro cálido del pedido y sale hacia el negro de Nosotros —
    nada de bloques de color pegados. */
+/* Salsas: recuadros separados en grid horizontal. Fondo más claro (hueso
+   cálido) y decoración que escala con el picor (.h1 → .h4). */
 .section-salsas {
   background:
-    radial-gradient(ellipse 800px 420px at 15% 8%, rgba(240, 213, 134, 0.10), transparent 60%),
-    radial-gradient(ellipse 900px 500px at 88% 95%, rgba(21, 17, 13, 0.55), transparent 70%),
-    linear-gradient(180deg, var(--negro-comal) 0px, #5C2320 110px, #471815 55%, #2E100E 88%, var(--negro-comal) 100%);
+    radial-gradient(ellipse 700px 400px at 20% 10%, rgba(201, 162, 39, 0.1), transparent 60%),
+    radial-gradient(ellipse 800px 450px at 90% 90%, rgba(181, 84, 45, 0.06), transparent 65%),
+    linear-gradient(180deg, var(--negro-comal) 0px, #EDE4D4 70px, #F3ECDE 45%, #E8DFD0 88%, var(--negro-comal) 100%);
+}
+.section-salsas .section-head .section-heading,
+.section-salsas .section-head .section-script {
+  color: var(--texto-oscuro);
+}
+.section-salsas .section-head .section-label {
+  color: var(--terracota);
 }
 .section-salsas .section-head::before {
-  background: radial-gradient(ellipse, rgba(240, 213, 134, 0.12), transparent 70%);
+  background: radial-gradient(ellipse, rgba(181, 84, 45, 0.12), transparent 70%);
 }
-/* Salsas compactas: filas ligeras — nombre, chiles y una línea.
-   El picor se lee por chiles rellenos (terracota), sin barras genéricas. */
 .salsas-grid {
-  max-width: 640px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: clamp(12px, 3vw, 16px);
+  max-width: 1100px;
   margin: 0 auto;
-  border: 1px solid rgba(240, 213, 134, 0.16);
-  border-radius: 16px;
-  background: rgba(26, 21, 18, 0.45);
+  padding-bottom: clamp(8px, 2vh, 16px);
+}
+.salsa-card {
+  position: relative;
   overflow: hidden;
+  background: rgba(255, 252, 245, 0.92);
+  border: 1px solid rgba(58, 42, 31, 0.12);
+  border-radius: 18px;
+  padding: clamp(18px, 4vw, 22px) clamp(18px, 4vw, 24px);
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
-.salsa-row {
-  padding: 14px clamp(14px, 4vw, 22px);
-  border-bottom: 1px solid rgba(240, 213, 134, 0.1);
+.salsa-card-deco {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-repeat: repeat;
+  background-size: 48px 48px;
 }
-.salsa-row:last-child { border-bottom: none; }
-.salsa-row-main {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+.salsa-card.h1 .salsa-card-deco {
+  background-image: radial-gradient(circle at 20% 30%, rgba(110, 123, 60, 0.2) 0 2px, transparent 3px);
+  opacity: 0.3;
+}
+.salsa-card.h2 .salsa-card-deco {
+  background-image:
+    radial-gradient(circle at 15% 25%, rgba(201, 162, 39, 0.22) 0 3px, transparent 4px),
+    radial-gradient(circle at 80% 70%, rgba(201, 162, 39, 0.14) 0 2px, transparent 3px);
+  opacity: 0.4;
+}
+.salsa-card.h3 .salsa-card-deco {
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(181, 84, 45, 0.28) 0 4px, transparent 5px),
+    radial-gradient(circle at 88% 75%, rgba(181, 84, 45, 0.2) 0 3px, transparent 4px);
+  opacity: 0.5;
+}
+.salsa-card.h3::after {
+  content: "🌶";
+  position: absolute; top: 10px; right: 12px;
+  font-size: 0.9rem; opacity: 0.4;
+}
+.salsa-card.h4 .salsa-card-deco {
+  background-image:
+    radial-gradient(circle at 10% 15%, rgba(158, 43, 37, 0.35) 0 5px, transparent 6px),
+    radial-gradient(circle at 85% 80%, rgba(158, 43, 37, 0.28) 0 4px, transparent 5px),
+    repeating-linear-gradient(45deg, rgba(158, 43, 37, 0.05) 0 2px, transparent 2px 10px);
+  opacity: 0.65;
+}
+.salsa-card.h4::before {
+  content: "☠";
+  position: absolute; top: 8px; right: 10px;
+  font-size: 1.1rem; opacity: 0.4;
+  text-shadow: 0 0 10px rgba(158, 43, 37, 0.4);
+}
+.salsa-card.h4::after {
+  content: "🔥";
+  position: absolute; bottom: 10px; left: 12px;
+  font-size: 1rem; opacity: 0.45;
+}
+.salsa-card.h1 {
+  border-color: rgba(110, 123, 60, 0.35);
+  background: linear-gradient(165deg, rgba(255, 252, 245, 0.98), rgba(232, 238, 214, 0.85));
+}
+.salsa-card.h2 {
+  border-color: rgba(201, 162, 39, 0.4);
+  background: linear-gradient(165deg, rgba(255, 252, 245, 0.98), rgba(247, 236, 200, 0.88));
+}
+.salsa-card.h3 {
+  border-color: rgba(181, 84, 45, 0.45);
+  background: linear-gradient(165deg, rgba(255, 252, 245, 0.96), rgba(247, 220, 200, 0.9));
+  box-shadow: 0 0 20px rgba(181, 84, 45, 0.1);
+}
+.salsa-card.h4 {
+  border-color: rgba(158, 43, 37, 0.55);
+  background: linear-gradient(165deg, rgba(255, 240, 236, 0.98), rgba(247, 210, 205, 0.92));
+  box-shadow: 0 0 28px rgba(158, 43, 37, 0.14), inset 0 0 30px rgba(158, 43, 37, 0.04);
+}
+.salsa-card:hover {
+  transform: translateY(-6px) rotate(-0.4deg);
+  border-color: rgba(201, 162, 39, 0.55);
+  box-shadow: 0 16px 36px rgba(58, 42, 31, 0.18);
+}
+.salsa-card.h4:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 44px rgba(158, 43, 37, 0.22), 0 0 36px rgba(158, 43, 37, 0.12);
+}
+.salsa-card-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 6px;
+  position: relative; z-index: 1;
 }
 .salsa-name {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(1rem, 3vw, 1.12rem);
-  color: var(--masa-cruda);
+  font-size: clamp(1rem, 3vw, 1.15rem);
+  color: var(--texto-oscuro);
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.salsa-flavor {
-  font-size: clamp(0.78rem, 2.4vw, 0.85rem);
-  color: rgba(243, 236, 221, 0.6);
-  font-style: italic;
-  margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.salsa-level {
+  font-size: clamp(0.6rem, 1.8vw, 0.68rem); font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.salsa-heat { display: flex; gap: 4px; flex-shrink: 0; }
-.salsa-heat svg { width: 16px; height: 16px; }
-.salsa-heat .chile-on { color: var(--terracota); }
-.salsa-row.h4 .salsa-heat .chile-on { color: #E8543F; filter: drop-shadow(0 0 4px rgba(232, 84, 63, 0.45)); }
-.salsa-heat .chile-off { color: rgba(243, 236, 221, 0.16); }
+.salsa-level.h1 { background: rgba(110, 123, 60, 0.18); color: #4A5528; border: 1px solid rgba(110, 123, 60, 0.45); }
+.salsa-level.h2 { background: rgba(201, 162, 39, 0.16); color: #7A6418; border: 1px solid rgba(201, 162, 39, 0.5); }
+.salsa-level.h3 { background: rgba(181, 84, 45, 0.16); color: #8A3A1C; border: 1px solid rgba(181, 84, 45, 0.5); }
+.salsa-level.h4 { background: rgba(158, 43, 37, 0.18); color: #8A1E18; border: 1px solid rgba(158, 43, 37, 0.55); }
+.salsa-flavor {
+  position: relative; z-index: 1;
+  font-size: clamp(0.78rem, 2.4vw, 0.85rem);
+  color: rgba(58, 42, 31, 0.65);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+.salsa-heat { display: flex; gap: 5px; position: relative; z-index: 1; }
+.salsa-heat svg { width: 18px; height: 18px; }
+.salsa-heat .chile-on { color: var(--terracota); filter: drop-shadow(0 0 4px rgba(181, 84, 45, 0.35)); }
+.salsa-card.h4 .salsa-heat .chile-on {
+  color: #E02A1C;
+  filter: drop-shadow(0 0 8px rgba(224, 42, 28, 0.55));
+  animation: chilePulse 1.4s ease-in-out infinite;
+}
+@keyframes chilePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.salsa-heat .chile-off { color: rgba(58, 42, 31, 0.18); }
 .salsas-note {
   position: relative;
   z-index: 2;
@@ -993,9 +1111,9 @@ body.loaded .hero-glow { animation-name: softIn2; }
   margin-top: clamp(48px, 7vh, 72px);
   padding: 0 clamp(16px, 4vw, 32px);
   font-family: var(--font-script); font-style: italic; font-weight: 600;
-  font-size: clamp(1.1rem, 2.4vw, 1.3rem);
+  font-size: clamp(1.1rem, 2.8vw, 1.3rem);
   line-height: 1.5;
-  color: rgba(240, 213, 134, 0.9);
+  color: rgba(58, 42, 31, 0.75);
 }
 
 /* ── UBICACIÓN ──────────────────────────────── */
@@ -1131,20 +1249,17 @@ body.loaded .hero-glow { animation-name: softIn2; }
 .cart-total-row {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: 22px 0 6px;
-  font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: clamp(0.9rem, 2.6vw, 1.05rem); letter-spacing: 0.08em; text-transform: uppercase;
 }
 .cart-total-row strong {
-  font-family: var(--font-display); font-size: 2rem;
+  font-family: var(--font-display); font-size: clamp(1.5rem, 5vw, 2rem);
   color: var(--dorado-patron); letter-spacing: 0;
   text-shadow: 0 0 20px rgba(201, 162, 39, 0.35);
 }
-.cart-note { font-size: 0.82rem; color: var(--texto-suave); font-style: italic; margin-bottom: 22px; }
-.btn-send { width: 100%; padding: 18px; font-size: 0.95rem; }
+.cart-note { font-size: clamp(0.74rem, 2.2vw, 0.82rem); color: var(--texto-suave); font-style: italic; margin-bottom: 22px; }
+.btn-send { width: 100%; padding: 18px; font-size: clamp(0.85rem, 2.5vw, 0.95rem); }
 
-/* Botón flotante */
-/* El display de abajo pisa el atributo [hidden]; lo restauramos explícito
-   para que el pill NO aparezca con el carrito vacío. */
-.cart-pill[hidden] { display: none !important; }
+/* Botón flotante: siempre visible (también con carrito vacío). */
 .cart-pill {
   /* Safe-area: en iPhone/Android con barra de gestos el botón sube lo
      necesario para no quedar tapado (requiere viewport-fit=cover). */
@@ -1157,24 +1272,32 @@ body.loaded .hero-glow { animation-name: softIn2; }
   border-radius: 999px;
   padding: 18px 34px;
   min-height: 58px;
-  font-family: var(--font-display); font-size: 1.05rem; font-weight: 800;
+  font-family: var(--font-display); font-size: clamp(0.9rem, 2.8vw, 1.05rem); font-weight: 800;
   letter-spacing: 0.06em; text-transform: uppercase;
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.55),
     0 0 32px rgba(201, 162, 39, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
   animation: pillIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .cart-pill:hover {
-  transform: translateX(-50%) translateY(-4px) scale(1.02);
   box-shadow:
     0 24px 56px rgba(0, 0, 0, 0.65),
     0 0 44px rgba(201, 162, 39, 0.5);
 }
+/* Rebote al agregar: anima un wrapper visual vía scale en ::after no —
+   usamos transform en el propio pill pero COMPONIENDO con translateX. */
+.cart-pill.is-bounce {
+  animation: pillBounce 0.28s ease;
+}
 @keyframes pillIn {
   from { opacity: 0; transform: translateX(-50%) translateY(30px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes pillBounce {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.12); }
 }
 
 /* ── FOOTER ─────────────────────────────────── */
@@ -1192,17 +1315,17 @@ body.loaded .hero-glow { animation-name: softIn2; }
 }
 .footer-script {
   font-family: var(--font-script); font-style: italic; font-weight: 600;
-  font-size: 1.4rem; color: var(--dorado-claro);
+  font-size: clamp(1.15rem, 3.5vw, 1.4rem); color: var(--dorado-claro);
   margin-bottom: 28px;
 }
 .footer-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; }
 .footer-links a {
-  font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: clamp(0.7rem, 2.2vw, 0.8rem); letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--texto-suave);
   transition: color 0.3s ease;
 }
 .footer-links a:hover { color: var(--dorado-claro); }
-.footer-credits { font-size: 0.78rem; color: rgba(243, 236, 221, 0.4); }
+.footer-credits { font-size: clamp(0.68rem, 2vw, 0.78rem); color: rgba(243, 236, 221, 0.4); }
 .back-to-top {
   position: absolute; right: clamp(18px, 4vw, 44px); bottom: 40px;
   width: 46px; height: 46px; border-radius: 50%;
@@ -1232,18 +1355,6 @@ body.loaded .hero-glow { animation-name: softIn2; }
 /* .licor-media ya trae su vitrina degradada clara como base; el mapa
    (.ubicacion-map) ya tiene panel oscuro propio. */
 
-/* ── MOMENTO DE MARCA · firma discreta ──────── */
-/* "the world is yours" como sello de autor: pequeño, Fraunces regular,
-   dorado apagado, tracking amplio. Quien se fija, lo encuentra. */
-.twiy-firma {
-  font-family: var(--font-brand);
-  font-weight: 400;
-  font-size: clamp(0.875rem, 2.4vw, 1.125rem); /* 14px → 18px */
-  letter-spacing: 0.22em;
-  color: rgba(201, 162, 39, 0.5); /* dorado apagado, no brillante */
-  margin-bottom: 14px;
-}
-
 /* ── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 960px) {
   .nosotros-inner { grid-template-columns: 1fr; }
@@ -1263,7 +1374,7 @@ body.loaded .hero-glow { animation-name: softIn2; }
     transition: opacity 0.4s ease, visibility 0.4s ease;
   }
   .header-nav.open { opacity: 1; visibility: visible; }
-  .header-nav > a:not(.btn-whatsapp-pill) { font-size: 1.1rem; }
+  .header-nav > a:not(.btn-whatsapp-pill) { font-size: clamp(0.95rem, 4.2vw, 1.1rem); }
   .hero-ctas { flex-direction: column; align-items: center; gap: 12px; }
   .hero-ctas .btn { width: min(280px, 78vw); }
   .menu-card-thumb { width: 84px; height: 84px; }
@@ -1290,16 +1401,20 @@ body.loaded .hero-glow { animation-name: softIn2; }
     border-radius: 0;
     border-left: none; border-right: none; border-bottom: none;
     padding: 18px 20px calc(18px + env(safe-area-inset-bottom, 0px));
-    font-size: 0.95rem;
+    font-size: clamp(0.85rem, 3.2vw, 0.95rem);
     white-space: nowrap;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(201, 162, 39, 0.25);
     animation: pillInMobile 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .cart-pill:hover { transform: none; }
-  body:has(.cart-pill:not([hidden])) .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   @keyframes pillInMobile {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pillBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
   }
   .footer-links { gap: 18px; flex-wrap: wrap; }
 }
@@ -1364,7 +1479,7 @@ body.animations-disabled .ig-grid,
 body.animations-disabled .ig-header,
 body.animations-disabled .ig-highlights,
 body.animations-disabled .ig-open,
-body.animations-disabled .salsa-row,
+body.animations-disabled .salsa-card,
 body.animations-disabled .nosotros-card,
 body.animations-disabled .meme-frame,
 body.animations-disabled .meme-frame img,

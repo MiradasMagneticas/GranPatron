@@ -658,7 +658,7 @@ function setupEntrances() {
     const children = el.querySelectorAll(
       ":scope > .section-label, :scope > .section-heading, :scope > .section-script, :scope > .section-body, " +
       ":scope > .menu-groups, :scope > .menu-tabs, :scope > .menu-swipe-hint, :scope > .menu-carousel, " +
-      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-row, " +
+      ".nosotros-card, .ig-header, .ig-highlights, .ig-grid, .ig-open, .salsa-card, " +
       ":scope > .ubicacion-ctas, :scope > .ubicacion-horario, :scope > .pedido-panel, .meme-frame img"
     );
     const targets = children.length ? children : [el];
@@ -972,9 +972,14 @@ function addToCart(catId, item) {
   entry.qty++;
   cart.set(id, entry);
   updateCartUI(id);
-  // El botón flotante rebota al agregar
-  if (HAS_GSAP) {
-    gsap.fromTo(cartPill, { scale: 1 }, { scale: 1.12, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", overwrite: true, transformOrigin: "50% 50%" });
+  // Rebote sin tocar el transform de layout (translateX(-50%) en desktop).
+  // Una clase CSS anima scale; GSAP overwrite:true destruía el centrado.
+  if (cartPill) {
+    cartPill.classList.remove("is-bounce");
+    void cartPill.offsetWidth;
+    cartPill.classList.add("is-bounce");
+    const clearBounce = () => cartPill.classList.remove("is-bounce");
+    cartPill.addEventListener("animationend", clearBounce, { once: true });
   }
 }
 
@@ -994,7 +999,7 @@ function cartTotals() {
 
 function updateCartUI(changedId) {
   const { count, total } = cartTotals();
-  cartPill.hidden = count === 0;
+  // El pill NUNCA se oculta: siempre visible, incluso con carrito vacío.
   cartPillCount.textContent = count;
   cartPillTotal.textContent = fmt(total);
   if (cartCountBadge) cartCountBadge.textContent = count === 1 ? "1 ítem" : `${count} ítems`;
@@ -1031,6 +1036,7 @@ function updateCartUI(changedId) {
 }
 
 function initCart() {
+  updateCartUI();
   cartPill.addEventListener("click", () => {
     lenis.scrollTo("#pedido", { offset: -20, duration: 1.6 });
   });
@@ -1047,23 +1053,24 @@ function initCart() {
 }
 
 /* ── SALSAS ─────────────────────────────────── */
-/* Salsas compactas: una fila por salsa — nombre, chiles rellenos según
-   intensidad y una sola línea de descripción. Sin tarjetas pesadas. */
+/* Salsas: recuadros separados — nombre, nivel, flavor y chiles por picor. */
 function renderSalsas() {
   const grid = document.getElementById("salsas-grid");
   if (!grid) return;
   SALSAS.forEach((s) => {
-    const row = document.createElement("div");
-    row.className = `salsa-row h${s.h}`;
+    const card = document.createElement("div");
+    card.className = `salsa-card h${s.h}`;
     const heat = Array.from({ length: 4 }, (_, i) =>
       `<span class="${i < s.h ? "chile-on" : "chile-off"}">${CHILE_SVG}</span>`).join("");
-    row.innerHTML = `
-      <div class="salsa-row-main">
+    card.innerHTML = `
+      <div class="salsa-card-deco" aria-hidden="true"></div>
+      <div class="salsa-card-top">
         <h4 class="salsa-name">${s.n}</h4>
-        <span class="salsa-heat" role="img" aria-label="Picor ${s.h} de 4 (${s.label})">${heat}</span>
+        <span class="salsa-level h${s.h}">${s.label}</span>
       </div>
-      <p class="salsa-flavor">${s.f}</p>`;
-    grid.appendChild(row);
+      <p class="salsa-flavor">${s.f}</p>
+      <div class="salsa-heat" role="img" aria-label="Picor ${s.h} de 4 (${s.label})">${heat}</div>`;
+    grid.appendChild(card);
   });
 }
 
